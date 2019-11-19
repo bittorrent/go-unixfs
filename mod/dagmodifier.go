@@ -705,7 +705,10 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 		// Scenario #2: Update case.
 		if exists {
 			// Truncate(0) on the metadata sub-DAG.
-			mdm.Truncate(0)
+			err := mdm.Truncate(0)
+			if err != nil {
+			    return nil, err
+			}
 
 			// iterate the inputM to put its (k, v) pairs to existing map.
 			for k, v := range inputM {
