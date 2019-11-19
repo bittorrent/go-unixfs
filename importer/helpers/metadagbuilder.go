@@ -29,7 +29,7 @@ func NewMetaDagBuilderHelper(idb DagBuilderHelper, spl chunker.Splitter, mroot i
 	}
 }
 
-func GetSuperMeta(chunkSize uint64, maxLinks uint64, trickleFormat bool) interface{} {
+func GetSuperMeta(chunkSize uint64, maxLinks uint64, trickleFormat bool) *SuperMeta {
 	return &SuperMeta{
 		ChunkSize:     chunkSize,
 		MaxLinks:      maxLinks,

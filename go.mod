@@ -18,7 +18,7 @@ require (
 	github.com/smartystreets/assertions v1.0.0 // indirect
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spaolacci/murmur3 v1.1.0
-	github.com/warpfork/go-wish v0.0.0-20190328234359-8b3e70f8e830 // indirect
+	github.com/warpfork/go-wish v0.0.0-20190328234359-8b3e70f8e830
 	github.com/whyrusleeping/chunker v0.0.0-20181014151217-fe64bd25879f
 	golang.org/x/net v0.0.0-20190611141213-3f473d35a33a
 )

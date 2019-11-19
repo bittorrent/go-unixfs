@@ -16,6 +16,7 @@ import (
 	help "github.com/TRON-US/go-unixfs/importer/helpers"
 	trickle "github.com/TRON-US/go-unixfs/importer/trickle"
 	uio "github.com/TRON-US/go-unixfs/io"
+	util "github.com/TRON-US/go-unixfs/util"
 
 	chunker "github.com/TRON-US/go-btfs-chunker"
 	cid "github.com/ipfs/go-cid"
@@ -676,7 +677,6 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 	var newMetaNode ipld.Node
 	var children *ft.DagMetaNodes
 	if b == nil {
-		// TODO: Get SuperMeta items and add to metadata.
 		// Create a metadata sub-DAG
 		newMetaNode, err = mdm.buildNewMetaDataDag(metadata)
 		if err != nil {
@@ -701,9 +701,12 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 			return nil, err
 		}
 
-		exists := intersects(m, inputM)
+		exists := util.Intersects(m, inputM)
 		// Scenario #2: Update case.
 		if exists {
+			// Truncate(0) on the metadata sub-DAG.
+			mdm.Truncate(0)
+
 			// iterate the inputM to put its (k, v) pairs to existing map.
 			for k, v := range inputM {
 				m[k] = v
@@ -807,12 +810,12 @@ func (mdm *MetaDagModifier) RemoveMetadata(root ipld.Node, metakeys []byte) (ipl
 
 		inputKeys := strings.Split(string(metakeys), ",")
 
-		exists := keyIntersects(m, inputKeys)
+		exists := util.KeyIntersects(m, inputKeys)
 
 		if exists {
 			modificationRequired = true
 			// Check if inputM and m have the same key set
-			if equalKeySets(m, inputKeys) {
+			if util.EqualKeySets(m, inputKeys) {
 				// Scenario #1: clear metadata.
 				clear = true
 			} else {
@@ -869,7 +872,7 @@ func (mdm *MetaDagModifier) buildNewMetaDataDag(metaBytes []byte) (ipld.Node, er
 
 	r := bytes.NewReader(metaBytes)
 	if superMeta.ChunkSize == 0 {
-		superMeta.ChunkSize = 256 * 1024
+		superMeta.ChunkSize = uint64(chunker.DefaultBlockSize)
 	}
 	if superMeta.MaxLinks == 0 {
 		superMeta.MaxLinks = uint64(help.DefaultLinksPerBlock)
@@ -925,37 +928,3 @@ func (mdm *MetaDagModifier) readMetadataBytes(root ipld.Node) ([]byte, error) {
 	return b, nil
 }
 
-func intersects(m map[string]interface{}, inputM map[string]interface{}) bool {
-	for k, _ := range inputM {
-		_, isPresent := m[k]
-		if isPresent {
-			return true
-		}
-	}
-	return false
-}
-
-func keyIntersects(m map[string]interface{}, inputKeys []string) bool {
-	for _, k := range inputKeys {
-		_, isPresent := m[k]
-		if isPresent {
-			return true
-		}
-	}
-	return false
-}
-
-func equalKeySets(m map[string]interface{}, inputKeys []string) bool {
-	if len(m) != len(inputKeys) {
-		return false
-	}
-
-	for _, ik := range inputKeys {
-		_, isPresent := m[ik]
-		if !isPresent {
-			return false
-		}
-	}
-
-	return true
-}

@@ -963,7 +963,8 @@ func TestBalancedMetaDagAppend(t *testing.T) {
 
 	t.Run("opts=UseBalancedWithDepthZeroMetadata-32-staticData", func(t *testing.T) {
 		cid := "QmaLy2PZK3PyiLjYLo7QPW4UDVT3igSEXUhwG6HN4tX2Ae"
-		testBalancedMetadataAppendWithUserData(t, testu.UseBalancedWithMetadata(2, inMdataDepthZero, 32, mDataToModify), userData, cid)
+		//testBalancedMetadataAppendWithUserData(t, testu.UseBalancedWithMetadata(2, inMdataDepthZero, 32, mDataToModify), userData, cid)
+		testBalancedMetadataAppendWithUserData(t, testu.UseBalancedWithMetadata(helpers.DefaultLinksPerBlock, inMdataDepthZero, 256*1024, mDataToModify), userData, cid)
 	})
 	t.Run("opts=UseBalancedWithDepthZeroMetadata-32", func(t *testing.T) {
 		testBalancedMetadataAppend(t, testu.UseBalancedWithMetadata(2, inMdataDepthZero, 32, mDataToModify), 72, "")
@@ -1009,6 +1010,7 @@ func testBalancedMetaDagAppend(t *testing.T, opts testu.NodeOpts, userDataSize i
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	dagmod, err := NewDagModifierBalanced(ctx, mnode, dserv, testu.MetaSplitterGen((int64(opts.ChunkSize))), opts.MaxLinks)
 	if err != nil {
 		t.Fatal(err)
