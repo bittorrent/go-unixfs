@@ -956,14 +956,13 @@ func testTrickleMetaDagAppend(t *testing.T, opts testu.NodeOpts, dataSize uint64
 }
 
 func TestBalancedMetaDagAppend(t *testing.T) {
-	inMdataDepthZero := []byte(`{"Price":11.2}`)
+	inMdataDepthZero := []byte(`{"price":11.2}`)
 	mDataToModify := []byte(`{"number":1234}`)
 	inputMdata := []byte(`{"nodeid":"QmURnhjU6b2Si4rqwfpD4FDGTzJH3hGRAWSQmXtagywwdz","Price":12.4}`)
 	userData := []byte("existing file contents")
 
 	t.Run("opts=UseBalancedWithDepthZeroMetadata-32-staticData", func(t *testing.T) {
-		cid := "QmaLy2PZK3PyiLjYLo7QPW4UDVT3igSEXUhwG6HN4tX2Ae"
-		//testBalancedMetadataAppendWithUserData(t, testu.UseBalancedWithMetadata(2, inMdataDepthZero, 32, mDataToModify), userData, cid)
+		cid := "QmTUGRf9q9kHcQ3RdBz162P7bjV49KjgRGmdpyqbCjwG7L"
 		testBalancedMetadataAppendWithUserData(t, testu.UseBalancedWithMetadata(helpers.DefaultLinksPerBlock, inMdataDepthZero, 256*1024, mDataToModify), userData, cid)
 	})
 	t.Run("opts=UseBalancedWithDepthZeroMetadata-32", func(t *testing.T) {
@@ -1011,13 +1010,15 @@ func testBalancedMetaDagAppend(t *testing.T, opts testu.NodeOpts, userDataSize i
 		t.Fatal(err)
 	}
 
-	dagmod, err := NewDagModifierBalanced(ctx, mnode, dserv, testu.MetaSplitterGen((int64(opts.ChunkSize))), opts.MaxLinks)
+	dagmod, err := NewDagModifierBalanced(ctx, mnode, dserv, testu.MetaSplitterGen((int64(opts.ChunkSize))), opts.MaxLinks, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	mdagmod := NewMetaDagModifierBalanced(dagmod, db)
 
 	// Append metadata.
+	// Note combining two JSON byte arrays like below does not happen here in unit tests:
+	// `{"price":12.22} + `{"number":1234}` -> `{"price":12.22,"number":1234}`
 	beg := uint64(len(opts.Metadata))
 	length := uint64(len(mDataToModifyWith))
 	orig := make([]byte, beg+length)

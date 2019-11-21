@@ -458,8 +458,19 @@ type DagMetaNodes struct {
 
 // GetChildrenForDagWithMeta returns a struct containing both the meta root node and
 // the data root node, if the given 'nd' is top of the DAG with token metadata.
-// Return nil, nil if 'nb' is no such node and there is no error.
+// Return `nil, nil` if 'nd' is no such node and there is no error.
 func GetChildrenForDagWithMeta(ctx context.Context, nd ipld.Node, ds ipld.DAGService) (*DagMetaNodes, error) {
+	if nd == nil {
+		return nil, errors.New("invalid argument value returned: nil")
+	}
+	_, ok := nd.(*dag.ProtoNode)
+	if !ok {
+		return nil, errors.New("expected Dag profobuf node")
+	}
+	if len(nd.Links()) < 2 {
+		return nil, nil
+	}
+
 	nodes := &DagMetaNodes{}
 	for i := 0; i < 2; i++ {
 		lnk := nd.Links()[i]
