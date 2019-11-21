@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	ft "github.com/TRON-US/go-unixfs"
-	ufile "github.com/TRON-US/go-unixfs/file"
 	"github.com/TRON-US/go-unixfs/importer/balanced"
 	help "github.com/TRON-US/go-unixfs/importer/helpers"
 	trickle "github.com/TRON-US/go-unixfs/importer/trickle"
@@ -67,11 +66,11 @@ type MetaDagModifier struct {
 // version if not 0 raw leaves will also be enabled.  The Prefix and
 // RawLeaves options can be overridden by changing them after the call.
 func NewDagModifier(ctx context.Context, from ipld.Node, serv ipld.DAGService, spl chunker.SplitterGen) (*DagModifier, error) {
-	return newDagModifier(ctx, from, serv, spl, 0, false)
+	return newDagModifier(ctx, from, serv, spl, 0, false, false)
 }
 
-func NewDagModifierBalanced(ctx context.Context, from ipld.Node, serv ipld.DAGService, spl chunker.SplitterGen, ml int) (*DagModifier, error) {
-	return newDagModifier(ctx, from, serv, spl, ml, true)
+func NewDagModifierBalanced(ctx context.Context, from ipld.Node, serv ipld.DAGService, spl chunker.SplitterGen, ml int, noMeta bool) (*DagModifier, error) {
+	return newDagModifier(ctx, from, serv, spl, ml, true, noMeta)
 }
 
 func NewMetaDagModifierBalanced(mod *DagModifier, db *help.DagBuilderHelper) *MetaDagModifier {
@@ -81,16 +80,22 @@ func NewMetaDagModifierBalanced(mod *DagModifier, db *help.DagBuilderHelper) *Me
 	}
 }
 
-func newDagModifier(ctx context.Context, from ipld.Node, serv ipld.DAGService, spl chunker.SplitterGen, ml int, balanced bool) (*DagModifier, error) {
-	switch from.(type) {
-	case *mdag.ProtoNode, *mdag.RawNode:
-		// ok
-	default:
-		return nil, ErrNotUnixfs
+func newDagModifier(ctx context.Context, from ipld.Node, serv ipld.DAGService, spl chunker.SplitterGen, ml int, balanced bool, noMeta bool) (*DagModifier, error) {
+	if !noMeta {
+		switch from.(type) {
+		case *mdag.ProtoNode, *mdag.RawNode:
+			// ok
+		default:
+			return nil, ErrNotUnixfs
+		}
 	}
 
-	prefix := from.Cid().Prefix()
-	prefix.Codec = cid.DagProtobuf
+	var prefix cid.Prefix
+	if !noMeta {
+		prefix = from.Cid().Prefix()
+		prefix.Codec = cid.DagProtobuf
+	}
+
 	rawLeaves := false
 	if prefix.Version > 0 {
 		rawLeaves = true
@@ -100,8 +105,12 @@ func newDagModifier(ctx context.Context, from ipld.Node, serv ipld.DAGService, s
 	if ml > 0 {
 		maxlinks = ml
 	}
+	var copied ipld.Node
+	if !noMeta {
+		copied = from.Copy()
+	}
 	return &DagModifier{
-		curNode:        from.Copy(),
+		curNode:        copied,
 		dagserv:        serv,
 		splitter:       spl,
 		ctx:            ctx,
@@ -667,7 +676,7 @@ func (mdm *MetaDagModifier) GetDb() *help.DagBuilderHelper {
 // Preconditions include that first the given `metadata` is in compact JSON format.
 func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.Node, error) {
 	// Read the existing metadata map.
-	b, err := mdm.readMetadataBytes(root)
+	b, err := util.ReadMetadataBytes(mdm.ctx, root, mdm.dagserv)
 	if err != nil {
 		return nil, err
 	}
@@ -683,7 +692,7 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 			return nil, err
 		}
 	} else {
-		children, err := ft.GetChildrenForDagWithMeta(mdm.ctx, root, mdm.dagserv)
+		children, err = ft.GetChildrenForDagWithMeta(mdm.ctx, root, mdm.dagserv)
 		if err != nil {
 			return nil, err
 		}
@@ -707,7 +716,7 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 			// Truncate(0) on the metadata sub-DAG.
 			err := mdm.Truncate(0)
 			if err != nil {
-			    return nil, err
+				return nil, err
 			}
 
 			// iterate the inputM to put its (k, v) pairs to existing map.
@@ -783,16 +792,19 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 // commas, second`mdm.curNode` has the root of the metadata sub-DAG.
 func (mdm *MetaDagModifier) RemoveMetadata(root ipld.Node, metakeys []byte) (ipld.Node, error) {
 	// Read the existing metadata map.
-	b, err := mdm.readMetadataBytes(root)
+	b, err := util.ReadMetadataBytes(mdm.ctx, root, mdm.dagserv)
 	if err != nil {
 		return nil, err
+	}
+
+	if b == nil {
+		return nil, errors.New("no metadata exists")
 	}
 
 	// Determine the specific scenario.
 	// Scenario #1:
 	var newMetaNode ipld.Node
 	var children *ft.DagMetaNodes
-	var modificationRequired bool
 	var clear bool
 	children, err = ft.GetChildrenForDagWithMeta(mdm.ctx, root, mdm.dagserv)
 	if err != nil {
@@ -802,47 +814,46 @@ func (mdm *MetaDagModifier) RemoveMetadata(root ipld.Node, metakeys []byte) (ipl
 		return nil, errors.New("expected DAG node with metadata child node")
 	}
 
-	if b != nil {
+	// Create existing map and check with the given key list.
+	m := make(map[string]interface{})
+	err = json.Unmarshal(b, &m)
+	if err != nil {
+		return nil, err
+	}
 
-		// Create existing map and input metadata map and check.
-		m := make(map[string]interface{})
-		err = json.Unmarshal(b, &m)
+	inputKeys := strings.Split(string(metakeys), ",")
+
+	exists := util.KeyIntersects(m, inputKeys)
+	if !exists {
+		return nil, errors.New("no metadata entries with the given keys")
+	} else {
+		// Truncate(0) on the metadata sub-DAG.
+		err := mdm.Truncate(0)
 		if err != nil {
 			return nil, err
 		}
 
-		inputKeys := strings.Split(string(metakeys), ",")
+		// Check if inputM and m have the same key set
+		if util.EqualKeySets(m, inputKeys) {
+			// Scenario #1: clear metadata.
+			clear = true
+		} else {
+			// Scenario #2: delete a subset of the metadata map.
+			// iterate the inputKeys to delete each key from the existing map.
+			for _, k := range inputKeys {
+				delete(m, k)
+			}
 
-		exists := util.KeyIntersects(m, inputKeys)
-
-		if exists {
-			modificationRequired = true
-			// Check if inputM and m have the same key set
-			if util.EqualKeySets(m, inputKeys) {
-				// Scenario #1: clear metadata.
-				clear = true
-			} else {
-				// Scenario #2: delete a subset of the metadata map.
-				// iterate the inputKeys to delete each key from the existing map.
-				for _, k := range inputKeys {
-					delete(m, k)
-				}
-
-				b, err = json.Marshal(m)
-				if err != nil {
-					return nil, err
-				}
-				// Create a metadata sub-DAG
-				newMetaNode, err = mdm.buildNewMetaDataDag(b)
-				if err != nil {
-					return nil, err
-				}
+			b, err = json.Marshal(m)
+			if err != nil {
+				return nil, err
+			}
+			// Create a metadata sub-DAG
+			newMetaNode, err = mdm.buildNewMetaDataDag(b)
+			if err != nil {
+				return nil, err
 			}
 		}
-	}
-
-	if !modificationRequired {
-		return root, nil
 	}
 
 	dnode := children.DataNode
@@ -883,7 +894,9 @@ func (mdm *MetaDagModifier) buildNewMetaDataDag(metaBytes []byte) (ipld.Node, er
 	// TODO: trickle format input should be set somewhere..
 
 	metaSpl := chunker.NewMetaSplitter(r, superMeta.ChunkSize)
-	metaDb := help.NewMetaDagBuilderHelper(*mdm.GetDb(), metaSpl, nil)
+	db := mdm.GetDb()
+	metaDb := help.NewMetaDagBuilderHelper(*db, metaSpl, nil)
+	metaDb.SetSpl() // For the case for removing metadata items.
 	var mnode ipld.Node
 	if superMeta.TrickleFormat {
 		mnode, err = trickle.BuildNewMetaDataDag(metaDb)
@@ -895,39 +908,3 @@ func (mdm *MetaDagModifier) buildNewMetaDataDag(metaBytes []byte) (ipld.Node, er
 	}
 	return mnode, nil
 }
-
-func (mdm *MetaDagModifier) readMetadataBytes(root ipld.Node) ([]byte, error) {
-	nd, ok := root.(*mdag.ProtoNode)
-	if !ok {
-		return nil, errors.New("Expected protobuf Merkle DAG node")
-	}
-	fsn, err := ft.FSNodeFromBytes(nd.Data())
-	if err != nil {
-		return nil, err
-	}
-	if fsn.Type() != ft.TFile {
-		return nil, errors.New("Expected file type node")
-	}
-
-	_, mnode, err := ufile.CheckAndSplitMetadata(mdm.ctx, root, mdm.dagserv, false)
-	if err != nil {
-		return nil, err
-	}
-	if mnode == nil {
-		return nil, nil
-	}
-
-	r, err := uio.NewDagReader(mdm.ctx, mnode, mdm.dagserv)
-	if err != nil {
-		return nil, err
-	}
-
-	b := make([]byte, r.Size())
-	_, err = r.CtxReadFull(mdm.ctx, b)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
-}
-

@@ -7,22 +7,19 @@ import (
 
 func testMapIntersects(t *testing.T) {
 	intersectTestTable := map[string]struct {
-		input1 		map[string]interface{}
-		input2 		map[string]interface{}
-		want  		bool
+		input1 map[string]interface{}
+		input2 map[string]interface{}
+		want   bool
 	}{
-		"partial":
-		{input1: map[string]interface{}{"key1": 123, "key2": "val2"},
+		"partial": {input1: map[string]interface{}{"key1": 123, "key2": "val2"},
 			input2: map[string]interface{}{"key1": 3},
-			want: true, },
-		"equal":
-		{input1: map[string]interface{}{"key1": 123, "key2": "val2"},
+			want:   true},
+		"equal": {input1: map[string]interface{}{"key1": 123, "key2": "val2"},
 			input2: map[string]interface{}{"key1": 123, "key2": "val2"},
-			want: true},
-		"empty":
-		{input1: map[string]interface{}{"key1": 123, "key2": "val2"},
+			want:   true},
+		"empty": {input1: map[string]interface{}{"key1": 123, "key2": "val2"},
 			input2: map[string]interface{}{"key3": 123, "key4": "val2"},
-			want: false},
+			want:   false},
 	}
 
 	for name, td := range intersectTestTable {
@@ -38,22 +35,19 @@ func testMapIntersects(t *testing.T) {
 
 func testKeyIntersects(t *testing.T) {
 	keyIntersectTestTable := map[string]struct {
-		input1 		map[string]interface{}
-		input2 		map[string]interface{}
-		want  		bool
+		input1 map[string]interface{}
+		input2 map[string]interface{}
+		want   bool
 	}{
-		"partial":
-		{input1: map[string]interface{}{"key1": 123, "key2": "val2"},
+		"partial": {input1: map[string]interface{}{"key1": 123, "key2": "val2"},
 			input2: map[string]interface{}{"key1": 3},
-			want: true, },
-		"equal":
-		{input1: map[string]interface{}{"key1": "", "key2": "val2"},
+			want:   true},
+		"equal": {input1: map[string]interface{}{"key1": "", "key2": "val2"},
 			input2: map[string]interface{}{"key1": 123, "key2": "val2"},
-			want: true},
-		"empty":
-		{input1: map[string]interface{}{"key1": 123, "key2": "val2"},
+			want:   true},
+		"empty": {input1: map[string]interface{}{"key1": 123, "key2": "val2"},
 			input2: map[string]interface{}{"key3": 123, "key4": "val2"},
-			want: false},
+			want:   false},
 	}
 
 	for name, td := range keyIntersectTestTable {
@@ -69,22 +63,19 @@ func testKeyIntersects(t *testing.T) {
 
 func testEqualKeySets(t *testing.T) {
 	equalKeySetTestTable := map[string]struct {
-		input1 		map[string]interface{}
-		input2 		[]string
-		want  		bool
+		input1 map[string]interface{}
+		input2 []string
+		want   bool
 	}{
-		"partial":
-		{input1: map[string]interface{}{"key1": 123, "key2": "val2"},
+		"partial": {input1: map[string]interface{}{"key1": 123, "key2": "val2"},
 			input2: []string{"key1"},
-			want: false, },
-		"equal":
-		{input1: map[string]interface{}{"key1": "", "key2": "val2"},
+			want:   false},
+		"equal": {input1: map[string]interface{}{"key1": "", "key2": "val2"},
 			input2: []string{"key1", "key2"},
-			want: true},
-		"empty":
-		{input1: map[string]interface{}{"key1": 123, "key2": "val2"},
+			want:   true},
+		"empty": {input1: map[string]interface{}{"key1": 123, "key2": "val2"},
 			input2: []string{"key3", "key4"},
-			want: false},
+			want:   false},
 	}
 
 	for name, td := range equalKeySetTestTable {
@@ -97,7 +88,6 @@ func testEqualKeySets(t *testing.T) {
 		})
 	}
 }
-
 
 func TestIntersects(t *testing.T) {
 	testMapIntersects(t)

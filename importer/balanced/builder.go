@@ -262,8 +262,9 @@ func BuildMetadataDag(db *h.DagBuilderHelper) error {
 	return nil
 }
 
-// BuildNewMetaDataDag's preconditions include
-// mdb's splitter is already set up.
+// BuildNewMetaDataDag builds a metadata DAG and sets up the MetaDagBuilderHelper's
+// meta Dag root with the new DAG root.
+// A precondition is to set mdb.db.spl with SetSpl() from the caller.
 func BuildNewMetaDataDag(mdb *h.MetaDagBuilderHelper) (ipld.Node, error) {
 	root, fileSize, err := mdb.NewLeafDataNode(ft.TTokenMeta)
 	if err != nil {

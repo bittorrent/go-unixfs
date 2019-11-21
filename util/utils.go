@@ -1,5 +1,17 @@
 package util
 
+import (
+	"context"
+	"errors"
+
+	ft "github.com/TRON-US/go-unixfs"
+	ufile "github.com/TRON-US/go-unixfs/file"
+	uio "github.com/TRON-US/go-unixfs/io"
+
+	ipld "github.com/ipfs/go-ipld-format"
+	mdag "github.com/ipfs/go-merkledag"
+)
+
 // Intersects returns true if the given two maps intersect.
 func Intersects(m map[string]interface{}, inputM map[string]interface{}) bool {
 	for k, _ := range inputM {
@@ -38,4 +50,39 @@ func EqualKeySets(m map[string]interface{}, inputKeys []string) bool {
 	}
 
 	return true
+}
+
+func ReadMetadataBytes(ctx context.Context, root ipld.Node, ds ipld.DAGService) ([]byte, error) {
+	nd, ok := root.(*mdag.ProtoNode)
+	if !ok {
+		return nil, errors.New("Expected protobuf Merkle DAG node")
+	}
+	fsn, err := ft.FSNodeFromBytes(nd.Data())
+	if err != nil {
+		return nil, err
+	}
+	if fsn.Type() != ft.TFile {
+		return nil, errors.New("Expected file type node")
+	}
+
+	_, mnode, err := ufile.CheckAndSplitMetadata(ctx, root, ds, false)
+	if err != nil {
+		return nil, err
+	}
+	if mnode == nil {
+		return nil, nil
+	}
+
+	r, err := uio.NewDagReader(ctx, mnode, ds)
+	if err != nil {
+		return nil, err
+	}
+
+	b := make([]byte, r.Size())
+	_, err = r.CtxReadFull(ctx, b)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }
