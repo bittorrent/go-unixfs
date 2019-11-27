@@ -352,7 +352,7 @@ func buildMetaTestDag(ds ipld.DAGService, maxlinks int, dataspl chunker.Splitter
 	}
 
 	// Invoke the driver to create metadata dag
-	err = BuildMetadataDag(db)
+	_, err = BuildMetadataDag(db)
 	if err != nil {
 		return nil, err
 	}
@@ -416,7 +416,7 @@ func buildTestDagWithMetadata(ds ipld.DAGService, maxlinks int, dataspl chunker.
 
 	// Execute the drivers to create metadata and data dags.
 	if db.IsThereMetaData() && !db.IsMetaDagBuilt() {
-		err := BuildMetadataDag(db)
+		_, err := BuildMetadataDag(db)
 		if err != nil {
 			return nil, err
 		}

@@ -14,6 +14,12 @@ import (
 	ipld "github.com/ipfs/go-ipld-format"
 )
 
+const (
+	// SmallestString is used for metadata name to be the smallest
+	// possible string value.
+	SmallestString = "\u0000"
+)
+
 // UseHAMTSharding is a global flag that signifies whether or not to use the
 // HAMT sharding scheme for directory creation
 var UseHAMTSharding = false

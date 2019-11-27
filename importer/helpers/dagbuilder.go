@@ -237,6 +237,11 @@ func (db *DagBuilderHelper) GetMetaDb() *MetaDagBuilderHelper {
 	return db.metaDb
 }
 
+// SetMetaDb sets the given `mdb` to the metadata DAG build helper.
+func (db *DagBuilderHelper) SetMetaDb(mdb *MetaDagBuilderHelper) {
+	db.metaDb = mdb
+}
+
 // NewLeafNode creates a leaf node filled with data.  If rawLeaves is
 // defined then a raw leaf will be returned.  Otherwise, it will create
 // and return `FSNodeOverDag` with `fsNodeType`.
