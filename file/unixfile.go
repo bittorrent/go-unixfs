@@ -164,9 +164,11 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, met
 			return nil, err
 		}
 		if fsn.IsDir() {
-			return newUnixfsDir(ctx, dserv, dn)
-		}
-		if fsn.Type() == ft.TSymlink {
+			if !meta {
+				return newUnixfsDir(ctx, dserv, dn)
+			}
+			// Now the current case is when the dir node may contain metadata.
+		} else if fsn.Type() == ft.TSymlink {
 			return files.NewLinkFile(string(fsn.Data()), nil), nil
 		}
 
@@ -238,10 +240,10 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, met
 
 // checkAndSplitMetadata returns both data root node and metadata root node if exists from
 // the DAG topped by the given 'nd'.
-// Case #1: if 'nd' is dummy root with metadata root node and user data root node being children
-//    return the second child node that is the root of user data sub-DAG.
-// Case #2: if 'nd' is metadata and the given `meta` is true, return nd. Otherwise return error.
-// Case #3: if 'nd' is user data, return 'nd'.
+// Case #1: if 'nd' is dummy root with metadata root node and user data root node being children,
+//    return [the second data root child node, the first metadata root child node, nil].
+// Case #2: if 'nd' is metadata and the given `meta` is true, return [nil, nd, nil]. Otherwise return error.
+// Case #3: if 'nd' is user data, return ['nd', nil, nil].
 func CheckAndSplitMetadata(ctx context.Context, nd ipld.Node, ds ipld.DAGService, meta bool) (ipld.Node, ipld.Node, error) {
 	n := nd.(*dag.ProtoNode)
 

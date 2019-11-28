@@ -250,16 +250,16 @@ func layout(db *h.DagBuilderHelper, addMetaDag bool) (ipld.Node, error) {
 
 // BuildMetadataDag builds a DAG for the given db.TokenMetadata byte array and
 // sets the root node to db.metaDagRoot.
-func BuildMetadataDag(db *h.DagBuilderHelper) error {
+func BuildMetadataDag(db *h.DagBuilderHelper) (ipld.Node, error) {
 	mdb := db.GetMetaDb()
 	mdb.SetDb(db)
 	mdb.SetSpl()
 
-	_, err := BuildNewMetaDataDag(mdb)
+	metaDag, err := BuildNewMetaDataDag(mdb)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return metaDag, nil
 }
 
 // BuildNewMetaDataDag builds a metadata DAG and sets up the MetaDagBuilderHelper's

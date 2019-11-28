@@ -676,7 +676,7 @@ func (mdm *MetaDagModifier) GetDb() *help.DagBuilderHelper {
 // Preconditions include that first the given `metadata` is in compact JSON format.
 func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.Node, error) {
 	// Read the existing metadata map.
-	b, err := util.ReadMetadataBytes(mdm.ctx, root, mdm.dagserv)
+	b, err := util.ReadMetadataBytes(mdm.ctx, root, mdm.dagserv, false)
 	if err != nil {
 		return nil, err
 	}
@@ -792,7 +792,7 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 // commas, second`mdm.curNode` has the root of the metadata sub-DAG.
 func (mdm *MetaDagModifier) RemoveMetadata(root ipld.Node, metakeys []byte) (ipld.Node, error) {
 	// Read the existing metadata map.
-	b, err := util.ReadMetadataBytes(mdm.ctx, root, mdm.dagserv)
+	b, err := util.ReadMetadataBytes(mdm.ctx, root, mdm.dagserv, false)
 	if err != nil {
 		return nil, err
 	}

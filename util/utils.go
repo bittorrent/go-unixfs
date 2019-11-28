@@ -52,7 +52,7 @@ func EqualKeySets(m map[string]interface{}, inputKeys []string) bool {
 	return true
 }
 
-func ReadMetadataBytes(ctx context.Context, root ipld.Node, ds ipld.DAGService) ([]byte, error) {
+func ReadMetadataBytes(ctx context.Context, root ipld.Node, ds ipld.DAGService, meta bool) ([]byte, error) {
 	nd, ok := root.(*mdag.ProtoNode)
 	if !ok {
 		return nil, errors.New("Expected protobuf Merkle DAG node")
@@ -61,11 +61,12 @@ func ReadMetadataBytes(ctx context.Context, root ipld.Node, ds ipld.DAGService) 
 	if err != nil {
 		return nil, err
 	}
-	if fsn.Type() != ft.TFile {
-		return nil, errors.New("Expected file type node")
+	typ := fsn.Type()
+	if typ != ft.TFile && typ != ft.TDirectory && typ != ft.TTokenMeta {
+		return nil, errors.New("unexpected node type")
 	}
 
-	_, mnode, err := ufile.CheckAndSplitMetadata(ctx, root, ds, false)
+	_, mnode, err := ufile.CheckAndSplitMetadata(ctx, root, ds, meta)
 	if err != nil {
 		return nil, err
 	}

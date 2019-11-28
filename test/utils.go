@@ -151,7 +151,7 @@ func GetNode(t testing.TB, dserv ipld.DAGService, data []byte, opts NodeOpts) ip
 		}
 
 		if db.IsThereMetaData() && !db.IsMetaDagBuilt() {
-			err := balanced.BuildMetadataDag(db)
+			_, err := balanced.BuildMetadataDag(db)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -173,7 +173,7 @@ func GetNode(t testing.TB, dserv ipld.DAGService, data []byte, opts NodeOpts) ip
 	var node ipld.Node
 	if db.IsThereMetaData() && !db.IsMetaDagBuilt() {
 		if opts.Balanced {
-			err = balanced.BuildMetadataDag(db)
+			_, err = balanced.BuildMetadataDag(db)
 		} else {
 			err = trickle.BuildMetadataDag(db)
 		}
