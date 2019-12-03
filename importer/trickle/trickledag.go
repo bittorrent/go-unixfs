@@ -90,7 +90,7 @@ func BuildNewMetaDataDag(mdb *h.MetaDagBuilderHelper) (ipld.Node, error) {
 func ChildFilesystemNodeType(fsType pb.Data_DataType) (pb.Data_DataType, error) {
 	var nextFsType pb.Data_DataType
 	switch fsType {
-	case ft.TFile:
+	case ft.TFile, ft.TRaw:
 		nextFsType = ft.TRaw
 	case ft.TTokenMeta:
 		nextFsType = ft.TTokenMeta
