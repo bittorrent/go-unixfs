@@ -77,10 +77,10 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 		valid += 1
 		if valid == int(numData) {
 			// No need to get more nodes
-			cancel()
 			break
 		}
 	}
+	cancel()
 	if valid < int(numData) {
 		return nil, fmt.Errorf("unable to obtain at least [%d] shards to join original file", numData)
 	}
