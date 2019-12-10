@@ -80,6 +80,9 @@ func (it *ufsIterator) Next() bool {
 	}
 
 	it.curName = l.Name
+	if it.curName == uio.SmallestString {
+		return it.err == nil
+	}
 	it.curFile, it.err = NewUnixfsFile(it.ctx, it.dserv, nd, false)
 	return it.err == nil
 }
@@ -186,6 +189,7 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, met
 		if err != nil {
 			return nil, err
 		}
+
 
 		// Return just metadata if available
 		if meta {
