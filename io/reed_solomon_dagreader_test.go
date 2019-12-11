@@ -22,8 +22,8 @@ func TestReedSolomonRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
-		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)))
+	reader, _, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
+		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,8 +58,8 @@ func TestReedSolomonWithMetadataRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
-		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)))
+	reader, _, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
+		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

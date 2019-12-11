@@ -30,14 +30,28 @@ type nodeBufIndex struct {
 // A ReedSolomonDagReader wraps M DagReaders and reads N (data) out of
 // M (data + parity) concurrently to decode the original file shards for
 // the returned DagReader to use.
+// Optionally, accepts a list of missing shard hashes for repair and returns
+// the buffered data readers on any missing shards (nil for already existing).
 func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGetter,
-	numData, numParity, size uint64) (DagReader, error) {
-	// TODO: Read data, parity and size from metadata when implemented
-
+	numData, numParity, size uint64, missingShards []cid.Cid) (DagReader, []io.Reader, error) {
 	totalShards := int(numData + numParity)
 	if totalShards != len(n.Links()) {
-		return nil, fmt.Errorf("number of links under node [%d] does not match set data + parity [%d]",
+		return nil, nil, fmt.Errorf("number of links under node [%d] does not match set data + parity [%d]",
 			len(n.Links()), totalShards)
+	}
+
+	// Check if all missing shards are valid
+	linkIndexMap := map[string]int{}
+	for i, link := range n.Links() {
+		linkIndexMap[link.Cid.String()] = i
+	}
+	missingIndexMap := map[int]int{} // maps from shard index to missing order index
+	for i, ms := range missingShards {
+		index, ok := linkIndexMap[ms.String()]
+		if !ok {
+			return nil, nil, fmt.Errorf("missing shard hash [%s] is not found", ms.String())
+		}
+		missingIndexMap[index] = i
 	}
 
 	// Grab at least N nodes then we are ready for re-construction
@@ -82,7 +96,7 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 	}
 	cancel()
 	if valid < int(numData) {
-		return nil, fmt.Errorf("unable to obtain at least [%d] shards to join original file", numData)
+		return nil, nil, fmt.Errorf("unable to obtain at least [%d] shards to join original file", numData)
 	}
 
 	// Check if we already have everything
@@ -97,11 +111,13 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 	// Create rs stream
 	rss, err := rs.NewStreamC(int(numData), int(numParity), true, true)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Reconstruct if missing some data shards
-	if !dataValid {
+	// Also create readers for returning missing shards
+	missingReaders := make([]io.Reader, len(missingShards))
+	if !dataValid || len(missingShards) > 0 {
 		valid := make([]io.Reader, totalShards)
 		fill := make([]io.Writer, totalShards)
 		// Make all valid shards
@@ -109,7 +125,8 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 		for i, b := range bufs {
 			if b != nil {
 				valid[i] = bytes.NewReader(b.Bytes())
-			} else if i < int(numData) {
+			} else if _, ok := missingIndexMap[i]; ok || i < int(numData) {
+				// Need to fill all data + missing shards
 				b = &bytes.Buffer{}
 				bufs[i] = b
 				fill[i] = b
@@ -117,7 +134,17 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 		}
 		err = rss.Reconstruct(valid, fill)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+		// Only return missing shards that are actually missing
+		// (valid means it's already locally available)
+		for i, f := range fill {
+			if f == nil {
+				continue // skip non-filled
+			}
+			if mi, ok := missingIndexMap[i]; ok {
+				missingReaders[mi] = bytes.NewReader(bufs[i].Bytes())
+			}
 		}
 	}
 
@@ -129,10 +156,10 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 	var dataBuf bytes.Buffer
 	err = rss.Join(&dataBuf, shards, int64(size))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return &reedSolomonDagReader{Reader: bytes.NewReader(dataBuf.Bytes())}, nil
+	return &reedSolomonDagReader{Reader: bytes.NewReader(dataBuf.Bytes())}, missingReaders, nil
 }
 
 // Size returns the total size of the data from the decoded DAG structured file
