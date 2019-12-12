@@ -10,6 +10,7 @@ import (
 
 	chunker "github.com/TRON-US/go-btfs-chunker"
 	files "github.com/TRON-US/go-btfs-files"
+	cid "github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
 	dag "github.com/ipfs/go-merkledag"
 )
@@ -83,7 +84,7 @@ func (it *ufsIterator) Next() bool {
 	if it.curName == uio.SmallestString {
 		return it.err == nil
 	}
-	it.curFile, it.err = NewUnixfsFile(it.ctx, it.dserv, nd, false)
+	it.curFile, it.err = NewUnixfsFile(it.ctx, it.dserv, nd, UnixfsFileOptions{})
 	return it.err == nil
 }
 
@@ -155,10 +156,17 @@ func newUnixfsDir(ctx context.Context, dserv ipld.DAGService, nd *dag.ProtoNode)
 	}, nil
 }
 
+type UnixfsFileOptions struct {
+	Meta         bool
+	RepairShards []cid.Cid
+}
+
 // NewUnixFsFile returns a DagReader for the 'nd' root node.
-// If meta = true, only return a valid metadata node if it exists. If not, return error.
-// If meta = false, return only the data contents.
-func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, meta bool) (files.Node, error) {
+// If opts.Meta = true, only return a valid metadata node if it exists. If not, return error.
+// If opts.Meta = false, return only the data contents.
+// If opts.RepairShards != nil, the shards would be reconstructed and added on this node.
+func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node,
+	opts UnixfsFileOptions) (files.Node, error) {
 	rawNode := false
 	switch dn := nd.(type) {
 	case *dag.ProtoNode:
@@ -167,7 +175,7 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, met
 			return nil, err
 		}
 		if fsn.IsDir() {
-			if !meta {
+			if !opts.Meta {
 				return newUnixfsDir(ctx, dserv, dn)
 			}
 			// Now the current case is when the dir node may contain metadata.
@@ -185,14 +193,13 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, met
 	// Keep 'nd' if raw node
 	if !rawNode {
 		// Split metadata node and data node if available
-		dataNode, metaNode, err := CheckAndSplitMetadata(ctx, nd, dserv, meta)
+		dataNode, metaNode, err := CheckAndSplitMetadata(ctx, nd, dserv, opts.Meta)
 		if err != nil {
 			return nil, err
 		}
 
-
 		// Return just metadata if available
-		if meta {
+		if opts.Meta {
 			if metaNode == nil {
 				return nil, errors.New("no metadata is available")
 			}
@@ -217,8 +224,8 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, met
 				}
 				if rsMeta.NumData > 0 && rsMeta.NumParity > 0 && rsMeta.FileSize > 0 {
 					// Always read from the actual dag root for reed solomon
-					dr, err = uio.NewReedSolomonDagReader(ctx, dataNode, dserv,
-						rsMeta.NumData, rsMeta.NumParity, rsMeta.FileSize)
+					dr, _, err = uio.NewReedSolomonDagReader(ctx, dataNode, dserv,
+						rsMeta.NumData, rsMeta.NumParity, rsMeta.FileSize, opts.RepairShards)
 					if err != nil {
 						return nil, err
 					}

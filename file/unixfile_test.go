@@ -19,7 +19,7 @@ func TestUnixFsFileRead(t *testing.T) {
 	ctx, closer := context.WithCancel(context.Background())
 	defer closer()
 
-	n, err := NewUnixfsFile(ctx, dserv, node, false)
+	n, err := NewUnixfsFile(ctx, dserv, node, UnixfsFileOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func TestUnixFsFileRead(t *testing.T) {
 	}
 
 	// Should have no metadata
-	_, err = NewUnixfsFile(ctx, dserv, node, true)
+	_, err = NewUnixfsFile(ctx, dserv, node, UnixfsFileOptions{Meta: true})
 	if err == nil {
 		t.Fatal("no metadata error should be returned")
 	}
@@ -52,7 +52,7 @@ func TestUnixFsFileReadWithMetadata(t *testing.T) {
 	defer closer()
 
 	// Read only data
-	n, err := NewUnixfsFile(ctx, dserv, node, false)
+	n, err := NewUnixfsFile(ctx, dserv, node, UnixfsFileOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +70,7 @@ func TestUnixFsFileReadWithMetadata(t *testing.T) {
 	}
 
 	// Read only metadata
-	n, err = NewUnixfsFile(ctx, dserv, node, true)
+	n, err = NewUnixfsFile(ctx, dserv, node, UnixfsFileOptions{Meta: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestUnixFsFileReedSolomonRead(t *testing.T) {
 	defer closer()
 
 	// Read only joined data
-	n, err := NewUnixfsFile(ctx, dserv, node, false)
+	n, err := NewUnixfsFile(ctx, dserv, node, UnixfsFileOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestUnixFsFileReedSolomonRead(t *testing.T) {
 	}
 
 	// Read only reed solomon fixed metadata
-	n, err = NewUnixfsFile(ctx, dserv, node, true)
+	n, err = NewUnixfsFile(ctx, dserv, node, UnixfsFileOptions{Meta: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +145,7 @@ func TestUnixFsFileReedSolomonMetadataRead(t *testing.T) {
 	defer closer()
 
 	// Read only joined data
-	n, err := NewUnixfsFile(ctx, dserv, node, false)
+	n, err := NewUnixfsFile(ctx, dserv, node, UnixfsFileOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +163,7 @@ func TestUnixFsFileReedSolomonMetadataRead(t *testing.T) {
 	}
 
 	// Read reed solomon fixed metadata + custom metadata
-	n, err = NewUnixfsFile(ctx, dserv, node, true)
+	n, err = NewUnixfsFile(ctx, dserv, node, UnixfsFileOptions{Meta: true})
 	if err != nil {
 		t.Fatal(err)
 	}
