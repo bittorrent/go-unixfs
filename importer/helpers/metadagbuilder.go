@@ -1,10 +1,16 @@
 package helpers
 
 import (
-	chunker "github.com/TRON-US/go-btfs-chunker"
+	"context"
+	"encoding/json"
+
 	ft "github.com/TRON-US/go-unixfs"
+	uio "github.com/TRON-US/go-unixfs/io"
 	pb "github.com/TRON-US/go-unixfs/pb"
+
+	chunker "github.com/TRON-US/go-btfs-chunker"
 	ipld "github.com/ipfs/go-ipld-format"
+	dag "github.com/ipfs/go-merkledag"
 )
 
 // SuperMeta contains the common metadata fields for a BTFS object
@@ -35,6 +41,57 @@ func GetSuperMeta(chunkSize uint64, maxLinks uint64, trickleFormat bool) *SuperM
 		MaxLinks:      maxLinks,
 		TrickleFormat: trickleFormat,
 	}
+}
+
+func GetOrDefaultSuperMeta(b []byte) (*SuperMeta, error) {
+	var sm SuperMeta
+	if b != nil {
+		err := json.Unmarshal(b, &sm)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if b == nil || sm.ChunkSize == 0 {
+		sm.ChunkSize = uint64(chunker.DefaultBlockSize)
+	}
+
+	if b == nil || sm.MaxLinks == 0 {
+		sm.MaxLinks = uint64(DefaultLinksPerBlock)
+	}
+
+	return &sm, nil
+}
+
+// GetMetaDataFromDagRoot returns the full metadata bytes if available.
+// This function is in importer/helpers instead of unixfs because of unixfs/io
+// dependency to read all the bytes.
+func GetMetaDataFromDagRoot(ctx context.Context, root ipld.Node, ds ipld.DAGService) ([]byte, error) {
+	_, ok := root.(*dag.ProtoNode)
+	if !ok {
+		return nil, dag.ErrNotProtobuf
+	}
+
+	mnd, err := ft.GetMetaSubdagRoot(ctx, root, ds)
+	if err != nil {
+		return nil, err
+	}
+	if mnd == nil {
+		return nil, nil
+	}
+
+	mr, err := uio.NewDagReader(ctx, mnd, ds)
+	if err != nil {
+		return nil, err
+	}
+
+	b := make([]byte, mr.Size())
+	_, err = mr.CtxReadFull(ctx, b)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }
 
 func (mdb *MetaDagBuilderHelper) SetSpl() {
