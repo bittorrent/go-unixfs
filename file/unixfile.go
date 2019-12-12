@@ -169,7 +169,8 @@ type UnixfsFileOptions struct {
 // NewUnixFsFile returns a DagReader for the 'nd' root node.
 // If opts.Meta = true, only return a valid metadata node if it exists. If not, return error.
 // If opts.Meta = false, return only the data contents.
-// If opts.RepairShards != nil, the shards would be reconstructed and added on this node.
+// If opts.Meta = false && opts.RepairShards != nil,
+// the shards would be reconstructed and added on this node.
 func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node,
 	opts UnixfsFileOptions) (files.Node, error) {
 	rawNode := false
