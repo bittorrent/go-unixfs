@@ -274,7 +274,7 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node,
 // original adder options.
 func addRecoveredShards(ctx context.Context, rootNode ipld.Node, ds ipld.DAGService,
 	recovered []io.Reader, rcids []cid.Cid) error {
-	b, err := ihelper.GetMetaDataFromDagRoot(ctx, rootNode, ds)
+	b, err := uio.GetMetaDataFromDagRoot(ctx, rootNode, ds)
 	if err != nil {
 		return err
 	}
