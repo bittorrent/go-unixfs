@@ -674,20 +674,22 @@ func (mdm *MetaDagModifier) GetDb() *help.DagBuilderHelper {
 //    Then this scenario is to append given items to the metadata sub-DAG.
 // TODO: trickle format
 // Preconditions include that first the given `metadata` is in compact JSON format.
+// Note that the given `metadata` should be added to the first element of the metadata list.
 func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.Node, error) {
-	// Read the existing metadata map.
-	b, err := util.ReadMetadataBytes(mdm.ctx, root, mdm.dagserv, false)
+	// Read the existing metadata map from the first element of the metadata list.
+	b, encodedTree, err := util.ReadMetadataListFromDag(mdm.ctx, root, mdm.dagserv, false)
 	if err != nil {
 		return nil, err
 	}
+	treeSize := len(encodedTree)
 
 	// Determine the specific scenario.
 	// Scenario #1:
 	var newMetaNode ipld.Node
 	var children *ft.DagMetaNodes
-	if b == nil {
+	if b == nil || util.IsMetadataEmpty(b) {
 		// Create a metadata sub-DAG
-		newMetaNode, err = mdm.buildNewMetaDataDag(metadata)
+		newMetaNode, err = mdm.buildNewMetaDataDag(metadata, encodedTree)
 		if err != nil {
 			return nil, err
 		}
@@ -728,7 +730,7 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 				return nil, err
 			}
 			// Create a metadata sub-DAG
-			newMetaNode, err = mdm.buildNewMetaDataDag(b)
+			newMetaNode, err = mdm.buildNewMetaDataDag(b, encodedTree)
 			if err != nil {
 				return nil, err
 			}
@@ -745,7 +747,9 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 			// Combine two JSON format byte arrays. E.g.,
 			// `{"price":12.22} + `{"number":1234}` -> `{"price":12.22,"number":1234}`
 			metadata[0] = ','
-			nmod, err := mdm.WriteAt(metadata, int64(fileSize)-1)
+			metadata = append(append(metadata[:], ','), encodedTree[:]...)
+			offset := int(fileSize) - treeSize - 2
+			nmod, err := mdm.WriteAt(metadata, int64(offset))
 			if err != nil {
 				return nil, err
 			}
@@ -792,7 +796,7 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 // commas, second`mdm.curNode` has the root of the metadata sub-DAG.
 func (mdm *MetaDagModifier) RemoveMetadata(root ipld.Node, metakeys []byte) (ipld.Node, error) {
 	// Read the existing metadata map.
-	b, err := util.ReadMetadataBytes(mdm.ctx, root, mdm.dagserv, false)
+	b, encodedTree, err := util.ReadMetadataListFromDag(mdm.ctx, root, mdm.dagserv, false)
 	if err != nil {
 		return nil, err
 	}
@@ -849,7 +853,7 @@ func (mdm *MetaDagModifier) RemoveMetadata(root ipld.Node, metakeys []byte) (ipl
 				return nil, err
 			}
 			// Create a metadata sub-DAG
-			newMetaNode, err = mdm.buildNewMetaDataDag(b)
+			newMetaNode, err = mdm.buildNewMetaDataDag(b, encodedTree)
 			if err != nil {
 				return nil, err
 			}
@@ -877,13 +881,14 @@ func (mdm *MetaDagModifier) RemoveMetadata(root ipld.Node, metakeys []byte) (ipl
 	return newRoot, nil
 }
 
-func (mdm *MetaDagModifier) buildNewMetaDataDag(metaBytes []byte) (ipld.Node, error) {
+func (mdm *MetaDagModifier) buildNewMetaDataDag(metaBytes []byte, encodedTree []byte) (ipld.Node, error) {
 	var superMeta help.SuperMeta
 	err := json.Unmarshal(metaBytes, &superMeta)
 	if err != nil {
 		return nil, err
 	}
 
+	metaBytes = util.CreateMetadataList(metaBytes, encodedTree)
 	r := bytes.NewReader(metaBytes)
 	if superMeta.ChunkSize == 0 {
 		superMeta.ChunkSize = uint64(chunker.DefaultBlockSize)

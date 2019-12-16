@@ -4,14 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
+	"strings"
 
 	ft "github.com/TRON-US/go-unixfs"
-	"github.com/TRON-US/go-unixfs/importer/balanced"
-	ihelper "github.com/TRON-US/go-unixfs/importer/helpers"
-	"github.com/TRON-US/go-unixfs/importer/trickle"
 	uio "github.com/TRON-US/go-unixfs/io"
+	"github.com/TRON-US/go-unixfs/util"
 
 	chunker "github.com/TRON-US/go-btfs-chunker"
 	files "github.com/TRON-US/go-btfs-files"
@@ -104,6 +101,7 @@ func (d *ufsDirectory) Close() error {
 func (d *ufsDirectory) Entries() files.DirIterator {
 	fileCh := make(chan *ipld.Link, prefetchFiles)
 	errCh := make(chan error, 1)
+	// Invoke goroutine to provide links of the current receiver `d` via `fileCh`.
 	go func() {
 		errCh <- d.dir.ForEachLink(d.ctx, func(link *ipld.Link) error {
 			if d.ctx.Err() != nil {
@@ -199,7 +197,7 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node,
 	// Keep 'nd' if raw node
 	if !rawNode {
 		// Split metadata node and data node if available
-		dataNode, metaNode, err := CheckAndSplitMetadata(ctx, nd, dserv, opts.Meta)
+		dataNode, metaNode, err := util.CheckAndSplitMetadata(ctx, nd, dserv, opts.Meta)
 		if err != nil {
 			return nil, err
 		}
@@ -213,43 +211,17 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node,
 		} else {
 			// Select DagReader based on metadata information
 			if metaNode != nil {
-				mdr, err := uio.NewDagReader(ctx, metaNode, dserv)
+				metaStruct, err := ObtainMetadataFromDag(ctx, metaNode, dserv)
 				if err != nil {
 					return nil, err
 				}
-				// Read all metadata
-				buf := make([]byte, mdr.Size())
-				_, err = mdr.CtxReadFull(ctx, buf)
-				if err != nil {
-					return nil, err
-				}
-				var rsMeta chunker.RsMetaMap
-				err = json.Unmarshal(buf, &rsMeta)
-				if err != nil {
-					return nil, err
-				}
+				rsMeta := metaStruct.RsMeta
 				if rsMeta.NumData > 0 && rsMeta.NumParity > 0 && rsMeta.FileSize > 0 {
-					// Always read from the actual dag root for reed solomon
-					var mrs []io.Reader
-					dr, mrs, err = uio.NewReedSolomonDagReader(ctx, dataNode, dserv,
-						rsMeta.NumData, rsMeta.NumParity, rsMeta.FileSize, opts.RepairShards)
-					if err != nil {
-						return nil, err
-					}
-					// Check which ones need recovery
-					var recovered []io.Reader
-					var rcids []cid.Cid
-					for i, mr := range mrs {
-						if mr != nil {
-							recovered = append(recovered, mr)
-							rcids = append(rcids, opts.RepairShards[i])
-						}
-					}
-					if len(recovered) > 0 {
-						err = addRecoveredShards(ctx, nd, dserv, recovered, rcids)
-						if err != nil {
-							return nil, err
-						}
+					// TODO: if isDir uio.New..DagForDirectory, else New..File that wraps reader builder
+					if rsMeta.IsDir {
+						return NewReedSolomonDirectory(ctx, nd, dataNode, dserv, opts, metaStruct)
+					} else {
+						return NewReedSolomonStandaloneFile(ctx, nd, dataNode, dserv, opts, metaStruct)
 					}
 				}
 			}
@@ -271,94 +243,54 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node,
 	}, nil
 }
 
-// addRecoveredShards mimics adding reed solomon shards anew according to the
-// original adder options.
-func addRecoveredShards(ctx context.Context, rootNode ipld.Node, ds ipld.DAGService,
-	recovered []io.Reader, rcids []cid.Cid) error {
-	b, err := uio.GetMetaDataFromDagRoot(ctx, rootNode, ds)
-	if err != nil {
-		return err
-	}
-
-	sm, err := ihelper.GetOrDefaultSuperMeta(b)
-	if err != nil {
-		return err
-	}
-
-	// Recover shard has a default size-based chunker
-	sc := fmt.Sprintf("size-%d", sm.ChunkSize)
-	for i, r := range recovered {
-		chnk, err := chunker.FromString(r, sc)
-		if err != nil {
-			return err
-		}
-
-		// Re-create (as much as possible) the original params
-		params := ihelper.DagBuilderParams{
-			Dagserv:   ds,
-			Maxlinks:  int(sm.MaxLinks),
-			ChunkSize: sm.ChunkSize,
-		}
-
-		db, err := params.New(chnk)
-		if err != nil {
-			return err
-		}
-
-		var sn ipld.Node // new shard root node
-		if sm.TrickleFormat {
-			sn, err = trickle.Layout(db)
-		} else {
-			sn, err = balanced.Layout(db)
-		}
-		if err != nil {
-			return err
-		}
-
-		if !rcids[i].Equals(sn.Cid()) {
-			return fmt.Errorf("recovered node [%s] does not match original [%s]",
-				sn.Cid().String(), rcids[i].String())
-		}
-	}
-
-	return nil
+type MetadataStruct struct {
+	Buff    []byte
+	RsMeta  *chunker.RsMetaMap
+	DirRoot *uio.DirNode
 }
 
-// checkAndSplitMetadata returns both data root node and metadata root node if exists from
-// the DAG topped by the given 'nd'.
-// Case #1: if 'nd' is dummy root with metadata root node and user data root node being children,
-//    return [the second data root child node, the first metadata root child node, nil].
-// Case #2: if 'nd' is metadata and the given `meta` is true, return [nil, nd, nil]. Otherwise return error.
-// Case #3: if 'nd' is user data, return ['nd', nil, nil].
-func CheckAndSplitMetadata(ctx context.Context, nd ipld.Node, ds ipld.DAGService, meta bool) (ipld.Node, ipld.Node, error) {
-	n := nd.(*dag.ProtoNode)
-
-	fsType, err := ft.GetFSType(n)
+// ObtainMetadataFromDag returns MetadataStruct object.
+func ObtainMetadataFromDag(ctx context.Context, metaNode ipld.Node, dserv ipld.NodeGetter) (*MetadataStruct, error) {
+	mdr, err := uio.NewDagReader(ctx, metaNode, dserv)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	if ft.TTokenMeta == fsType {
-		if meta {
-			return nil, nd, nil
-		} else {
-			return nil, nil, ft.ErrMetadataAccessDenied
-		}
+	// Read all metadata
+	buf := make([]byte, mdr.Size())
+	_, err = mdr.CtxReadFull(ctx, buf)
+	if err != nil {
+		return nil, err
 	}
 
-	// Return user data and metadata if first child is of type TTokenMeta.
-	if nd.Links() != nil && len(nd.Links()) >= 2 {
-		children, err := ft.GetChildrenForDagWithMeta(ctx, nd, ds)
+	// Split the buf into two byte arrays.
+	ts := strings.SplitN(string(buf), "},{", 2)
+	metaBuf := append([]byte(ts[0]), '}')
+	treeBuf := append([]byte("{"), []byte(ts[1])...)
+
+	// Read RsMetaMap
+	var rsMeta chunker.RsMetaMap
+	err = json.Unmarshal(metaBuf, &rsMeta)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read tree metadata if the Dag is for directory.
+	var root *uio.DirNode
+	if rsMeta.IsDir {
+		tmp := uio.DirNode{}
+		err = json.Unmarshal(treeBuf, &tmp)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
-		if children == nil {
-			return nd, nil, nil
-		}
-		return children.DataNode, children.MetaNode, nil
+		root = &tmp
 	}
 
-	return nd, nil, nil
+	return &MetadataStruct{
+		Buff:    buf,
+		RsMeta:  &rsMeta,
+		DirRoot: root,
+	}, nil
 }
 
 var _ files.Directory = &ufsDirectory{}
