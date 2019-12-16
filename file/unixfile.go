@@ -4,12 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 
 	ft "github.com/TRON-US/go-unixfs"
+	"github.com/TRON-US/go-unixfs/importer/balanced"
+	ihelper "github.com/TRON-US/go-unixfs/importer/helpers"
+	"github.com/TRON-US/go-unixfs/importer/trickle"
 	uio "github.com/TRON-US/go-unixfs/io"
 
 	chunker "github.com/TRON-US/go-btfs-chunker"
 	files "github.com/TRON-US/go-btfs-files"
+	cid "github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
 	dag "github.com/ipfs/go-merkledag"
 )
@@ -83,7 +89,7 @@ func (it *ufsIterator) Next() bool {
 	if it.curName == uio.SmallestString {
 		return it.err == nil
 	}
-	it.curFile, it.err = NewUnixfsFile(it.ctx, it.dserv, nd, false)
+	it.curFile, it.err = NewUnixfsFile(it.ctx, it.dserv, nd, UnixfsFileOptions{})
 	return it.err == nil
 }
 
@@ -155,10 +161,18 @@ func newUnixfsDir(ctx context.Context, dserv ipld.DAGService, nd *dag.ProtoNode)
 	}, nil
 }
 
+type UnixfsFileOptions struct {
+	Meta         bool
+	RepairShards []cid.Cid
+}
+
 // NewUnixFsFile returns a DagReader for the 'nd' root node.
-// If meta = true, only return a valid metadata node if it exists. If not, return error.
-// If meta = false, return only the data contents.
-func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, meta bool) (files.Node, error) {
+// If opts.Meta = true, only return a valid metadata node if it exists. If not, return error.
+// If opts.Meta = false, return only the data contents.
+// If opts.Meta = false && opts.RepairShards != nil,
+// the shards would be reconstructed and added on this node.
+func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node,
+	opts UnixfsFileOptions) (files.Node, error) {
 	rawNode := false
 	switch dn := nd.(type) {
 	case *dag.ProtoNode:
@@ -167,7 +181,7 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, met
 			return nil, err
 		}
 		if fsn.IsDir() {
-			if !meta {
+			if !opts.Meta {
 				return newUnixfsDir(ctx, dserv, dn)
 			}
 			// Now the current case is when the dir node may contain metadata.
@@ -185,14 +199,13 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, met
 	// Keep 'nd' if raw node
 	if !rawNode {
 		// Split metadata node and data node if available
-		dataNode, metaNode, err := CheckAndSplitMetadata(ctx, nd, dserv, meta)
+		dataNode, metaNode, err := CheckAndSplitMetadata(ctx, nd, dserv, opts.Meta)
 		if err != nil {
 			return nil, err
 		}
 
-
 		// Return just metadata if available
-		if meta {
+		if opts.Meta {
 			if metaNode == nil {
 				return nil, errors.New("no metadata is available")
 			}
@@ -217,10 +230,26 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, met
 				}
 				if rsMeta.NumData > 0 && rsMeta.NumParity > 0 && rsMeta.FileSize > 0 {
 					// Always read from the actual dag root for reed solomon
-					dr, err = uio.NewReedSolomonDagReader(ctx, dataNode, dserv,
-						rsMeta.NumData, rsMeta.NumParity, rsMeta.FileSize)
+					var mrs []io.Reader
+					dr, mrs, err = uio.NewReedSolomonDagReader(ctx, dataNode, dserv,
+						rsMeta.NumData, rsMeta.NumParity, rsMeta.FileSize, opts.RepairShards)
 					if err != nil {
 						return nil, err
+					}
+					// Check which ones need recovery
+					var recovered []io.Reader
+					var rcids []cid.Cid
+					for i, mr := range mrs {
+						if mr != nil {
+							recovered = append(recovered, mr)
+							rcids = append(rcids, opts.RepairShards[i])
+						}
+					}
+					if len(recovered) > 0 {
+						err = addRecoveredShards(ctx, nd, dserv, recovered, rcids)
+						if err != nil {
+							return nil, err
+						}
 					}
 				}
 			}
@@ -240,6 +269,59 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node, met
 	return &ufsFile{
 		DagReader: dr,
 	}, nil
+}
+
+// addRecoveredShards mimics adding reed solomon shards anew according to the
+// original adder options.
+func addRecoveredShards(ctx context.Context, rootNode ipld.Node, ds ipld.DAGService,
+	recovered []io.Reader, rcids []cid.Cid) error {
+	b, err := uio.GetMetaDataFromDagRoot(ctx, rootNode, ds)
+	if err != nil {
+		return err
+	}
+
+	sm, err := ihelper.GetOrDefaultSuperMeta(b)
+	if err != nil {
+		return err
+	}
+
+	// Recover shard has a default size-based chunker
+	sc := fmt.Sprintf("size-%d", sm.ChunkSize)
+	for i, r := range recovered {
+		chnk, err := chunker.FromString(r, sc)
+		if err != nil {
+			return err
+		}
+
+		// Re-create (as much as possible) the original params
+		params := ihelper.DagBuilderParams{
+			Dagserv:   ds,
+			Maxlinks:  int(sm.MaxLinks),
+			ChunkSize: sm.ChunkSize,
+		}
+
+		db, err := params.New(chnk)
+		if err != nil {
+			return err
+		}
+
+		var sn ipld.Node // new shard root node
+		if sm.TrickleFormat {
+			sn, err = trickle.Layout(db)
+		} else {
+			sn, err = balanced.Layout(db)
+		}
+		if err != nil {
+			return err
+		}
+
+		if !rcids[i].Equals(sn.Cid()) {
+			return fmt.Errorf("recovered node [%s] does not match original [%s]",
+				sn.Cid().String(), rcids[i].String())
+		}
+	}
+
+	return nil
 }
 
 // checkAndSplitMetadata returns both data root node and metadata root node if exists from

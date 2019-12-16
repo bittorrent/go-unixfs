@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"testing"
+	"time"
 
 	ft "github.com/TRON-US/go-unixfs"
 	balanced "github.com/TRON-US/go-unixfs/importer/balanced"
@@ -19,8 +21,13 @@ import (
 	ipld "github.com/ipfs/go-ipld-format"
 	mdag "github.com/ipfs/go-merkledag"
 	mdagmock "github.com/ipfs/go-merkledag/test"
+	rs "github.com/klauspost/reedsolomon"
 	mh "github.com/multiformats/go-multihash"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 // SizeSplitterGen creates a generator.
 func SizeSplitterGen(size int64) chunker.SplitterGen {
@@ -256,4 +263,52 @@ func PrintDag(nd *mdag.ProtoNode, ds ipld.DAGService, indent int) {
 		}
 	}
 	fmt.Println("}")
+}
+
+// GetReedSolomonShards gets the shards from the original file
+func GetReedSolomonShards(t *testing.T, inbuf []byte, numData, numParity uint64) [][]byte {
+	enc, err := rs.New(int(numData), int(numParity))
+	if err != nil {
+		t.Fatal("unable to create reference reedsolomon object", err)
+	}
+	shards, err := enc.Split(inbuf)
+	if err != nil {
+		t.Fatal("unable to split reference reedsolomon shards", err)
+	}
+	err = enc.Encode(shards)
+	if err != nil {
+		t.Fatal("unable to encode reference reedsolomon shards", err)
+	}
+	return shards
+}
+
+// RandomRemoveNodes randomly removes n sharded nodes from under the file root
+// Can remove from 1-n nodes since rand can repeat index
+// Returns shard root node, the list of removed hashes and indices in the original links
+func RandomRemoveNodes(t *testing.T, ctx context.Context,
+	root ipld.Node, dserv ipld.DAGService, n int) (ipld.Node, []cid.Cid, []int) {
+	// Skip metadata, pass the reed solomon root node
+	rsnode, err := root.Links()[1].GetNode(ctx, dserv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	allLinks := rsnode.Links()
+	missingMap := map[int]bool{}
+	var removed []cid.Cid
+	var removedIndex []int
+	for i := 0; i < n; i++ {
+		ri := rand.Intn(len(allLinks))
+		if _, ok := missingMap[ri]; ok {
+			continue
+		} else {
+			missingMap[ri] = true
+		}
+		removed = append(removed, allLinks[ri].Cid)
+		removedIndex = append(removedIndex, ri)
+	}
+	err = dserv.RemoveMany(ctx, removed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return rsnode, removed, removedIndex
 }

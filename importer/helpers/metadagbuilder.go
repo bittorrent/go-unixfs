@@ -1,9 +1,12 @@
 package helpers
 
 import (
-	chunker "github.com/TRON-US/go-btfs-chunker"
+	"encoding/json"
+
 	ft "github.com/TRON-US/go-unixfs"
 	pb "github.com/TRON-US/go-unixfs/pb"
+
+	chunker "github.com/TRON-US/go-btfs-chunker"
 	ipld "github.com/ipfs/go-ipld-format"
 )
 
@@ -35,6 +38,26 @@ func GetSuperMeta(chunkSize uint64, maxLinks uint64, trickleFormat bool) *SuperM
 		MaxLinks:      maxLinks,
 		TrickleFormat: trickleFormat,
 	}
+}
+
+func GetOrDefaultSuperMeta(b []byte) (*SuperMeta, error) {
+	var sm SuperMeta
+	if b != nil {
+		err := json.Unmarshal(b, &sm)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if b == nil || sm.ChunkSize == 0 {
+		sm.ChunkSize = uint64(chunker.DefaultBlockSize)
+	}
+
+	if b == nil || sm.MaxLinks == 0 {
+		sm.MaxLinks = uint64(DefaultLinksPerBlock)
+	}
+
+	return &sm, nil
 }
 
 func (mdb *MetaDagBuilderHelper) SetSpl() {

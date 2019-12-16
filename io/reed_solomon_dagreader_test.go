@@ -22,8 +22,8 @@ func TestReedSolomonRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
-		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)))
+	reader, _, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
+		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,8 +58,8 @@ func TestReedSolomonWithMetadataRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
-		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)))
+	reader, _, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
+		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,6 +87,51 @@ func TestReedSolomonWithMetadataRead(t *testing.T) {
 	err = testu.ArrComp(testu.ExtendMetaBytes(rsMeta, inputMdata), moutbuf)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestReedSolomonReadRepair(t *testing.T) {
+	dserv := testu.GetDAGServ()
+
+	rsOpts, _ := testu.UseReedSolomon(testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity,
+		1024, nil, 512)
+	inbuf, node := testu.GetRandomNode(t, dserv, 1024, rsOpts)
+
+	shards := testu.GetReedSolomonShards(t, inbuf, testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity)
+
+	ctx, closer := context.WithCancel(context.Background())
+	defer closer()
+
+	// Randomly remove some sharded nodes and repair the missing
+	rsnode, removed, removedIndex := testu.RandomRemoveNodes(t, ctx, node, dserv, 10)
+
+	reader, repaired, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
+		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)), removed)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	outbuf, err := ioutil.ReadAll(reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = testu.ArrComp(inbuf, outbuf)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check repaired shards
+	for i, rr := range repaired {
+		rbuf, err := ioutil.ReadAll(rr)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = testu.ArrComp(shards[removedIndex[i]], rbuf)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
