@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"sync"
+
 	"github.com/TRON-US/go-unixfs/importer/balanced"
 	ihelper "github.com/TRON-US/go-unixfs/importer/helpers"
 	"github.com/TRON-US/go-unixfs/importer/trickle"
 	"github.com/TRON-US/go-unixfs/util"
-	"io"
-	"sync"
 
 	uio "github.com/TRON-US/go-unixfs/io"
 
@@ -43,7 +44,7 @@ type ReedSolomonDag struct {
 type rsDirectory struct {
 	ctx       context.Context
 	dserv     ipld.DAGService
-	dir       uio.ReedSolomonDirectory
+	dir       *uio.ReedSolomonDirectory
 	size      int64
 	cidString string
 }
@@ -233,7 +234,7 @@ func newReedSolomonDir(ctx context.Context, dserv ipld.DAGService, cid string, n
 	return &rsDirectory{
 		ctx:       ctx,
 		dserv:     dserv,
-		dir:       *dir,
+		dir:       dir,
 		size:      int64(size),
 		cidString: cid,
 	}, nil
@@ -438,6 +439,3 @@ func addRecoveredShards(ctx context.Context, rootNode ipld.Node, ds ipld.DAGServ
 
 	return nil
 }
-
-var _ files.Directory = &rsDirectory{}
-var _ files.File = &rsFile{}

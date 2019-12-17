@@ -2,6 +2,7 @@ package io
 
 import (
 	"context"
+	"errors"
 	files "github.com/TRON-US/go-btfs-files"
 	ipld "github.com/ipfs/go-ipld-format"
 )
@@ -61,6 +62,9 @@ func (n *BaseNode) NodeSize() int64 {
 
 // ForEachLink implements the `Directory` interface.
 func (d *ReedSolomonDirectory) ForEachLink(ctx context.Context, f func(interface{}) error) error {
+	if d.DNode == nil {
+		return errors.New("nil d.Dnode encountered")
+	}
 	for _, l := range d.DNode.Links {
 		if err := f(l); err != nil {
 			return err
@@ -71,14 +75,17 @@ func (d *ReedSolomonDirectory) ForEachLink(ctx context.Context, f func(interface
 
 // Links implements the `Directory` interface.
 func (d *ReedSolomonDirectory) Links(ctx context.Context) []interface{} {
+	if d.DNode == nil {
+		return nil
+	}
 	return d.DNode.Links
 }
 
 func NewReedSolomonDirectory(dserv ipld.DAGService) *ReedSolomonDirectory {
-	dir := new(ReedSolomonDirectory)
-	dir.DNode = nil
-	dir.dserv = dserv
-	return dir
+	return &ReedSolomonDirectory{
+		DNode: nil,
+		dserv: dserv,
+	}
 }
 
 // NewReedSolomonDirectoryFromNode loads a ReedSolomon directory
