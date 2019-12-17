@@ -42,7 +42,7 @@ func TestUnixFsFileRead(t *testing.T) {
 }
 
 func TestUnixFsFileReadWithMetadata(t *testing.T) {
-	inputMeta := []byte(`{"hello":1,"world":["33","11","22"]},{}`)
+	inputMeta := []byte(`{"hello":1,"world":["33","11","22"]}#{}`)
 	dserv := testu.GetDAGServ()
 	inbuf, node := testu.GetRandomNode(t, dserv, 1024,
 		testu.UseBalancedWithMetadata(helpers.DefaultLinksPerBlock, inputMeta, 512, nil))
@@ -126,7 +126,7 @@ func TestUnixFsFileReedSolomonRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rsMeta = append(append(rsMeta[:len(rsMeta)], ','), []byte("{}")...)
+	rsMeta = append(append(rsMeta[:len(rsMeta)], '#'), []byte("{}")...)
 	err = testu.ArrComp(rsMeta, outbuf)
 	if err != nil {
 		t.Fatal(err)
@@ -134,7 +134,7 @@ func TestUnixFsFileReedSolomonRead(t *testing.T) {
 }
 
 func TestUnixFsFileReedSolomonMetadataRead(t *testing.T) {
-	inputMeta := []byte(`{"hello":1,"world":["33","11","22"]},{}`)
+	inputMeta := []byte(`{"hello":1,"world":["33","11","22"]}#{}`)
 	dserv := testu.GetDAGServ()
 
 	rsOpts, rsMeta := testu.UseReedSolomon(testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity,

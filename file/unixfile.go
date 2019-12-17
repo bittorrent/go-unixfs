@@ -264,7 +264,7 @@ func ObtainMetadataFromDag(ctx context.Context, metaNode ipld.Node, dserv ipld.N
 	}
 
 	// Split the buf into two byte arrays.
-	ts := strings.SplitN(string(buf), "},{", 2)
+	ts := strings.SplitN(string(buf), "}#{", 2)
 	metaBuf := append([]byte(ts[0]), '}')
 	treeBuf := append([]byte("{"), []byte(ts[1])...)
 

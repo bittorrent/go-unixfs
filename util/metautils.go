@@ -107,9 +107,9 @@ func CreateMetadataList(metaBytes []byte, dirTreeBytes []byte) []byte {
 		metaBytes = []byte("{}")
 	}
 	if dirTreeBytes != nil {
-		metaBytes = append(append(metaBytes[:len(metaBytes)], ','), dirTreeBytes[:]...)
+		metaBytes = append(append(metaBytes[:len(metaBytes)], '#'), dirTreeBytes[:]...)
 	} else {
-		metaBytes = append(append(metaBytes[:len(metaBytes)], ','), []byte("{}")...)
+		metaBytes = append(append(metaBytes[:len(metaBytes)], '#'), []byte("{}")...)
 	}
 
 	return metaBytes
@@ -119,7 +119,7 @@ func CreateMetadataList(metaBytes []byte, dirTreeBytes []byte) []byte {
 // into two byte arrays in JSON format.
 // Note that chunker.RsMetaMap.IsDir indicates or true when the second array has contents.
 func GetMetadataList(bytes []byte) ([]byte, []byte, error) {
-	ts := strings.SplitN(string(bytes), "},{", 2)
+	ts := strings.SplitN(string(bytes), "}#{", 2)
 
 	metaBuf := append([]byte(ts[0]), '}')
 	treeBuf := append([]byte("{"), []byte(ts[1])...)

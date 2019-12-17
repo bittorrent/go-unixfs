@@ -106,7 +106,7 @@ func ExtendMetaBytes(existing []byte, extended []byte) []byte {
 	} else {
 		returnBytes = extended
 	}
-	returnBytes = append(append(returnBytes[:len(returnBytes)], ','), []byte("{}")...)
+	returnBytes = append(append(returnBytes[:len(returnBytes)], '#'), []byte("{}")...)
 	return returnBytes
 }
 
