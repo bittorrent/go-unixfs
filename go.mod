@@ -2,7 +2,7 @@ module github.com/TRON-US/go-unixfs
 
 require (
 	github.com/Stebalien/go-bitfield v0.0.1
-	github.com/TRON-US/go-btfs-chunker v0.2.5
+	github.com/TRON-US/go-btfs-chunker v0.2.6
 	github.com/TRON-US/go-btfs-files v0.1.1
 	github.com/gogo/protobuf v1.2.1
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
@@ -19,9 +19,6 @@ require (
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a // indirect
 	github.com/spaolacci/murmur3 v1.1.0
 	github.com/warpfork/go-wish v0.0.0-20190328234359-8b3e70f8e830
-	github.com/whyrusleeping/go-logging v0.0.0-20170515211332-0457bb6b88fc
 )
 
 go 1.13
-
-replace github.com/TRON-US/go-btfs-chunker => ../go-btfs-chunker
