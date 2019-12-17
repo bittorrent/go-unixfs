@@ -3,6 +3,7 @@ package unixfile
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/TRON-US/go-unixfs/importer/balanced"
@@ -177,40 +178,16 @@ func GetRsNode(l interface{}) (uio.Node, error) {
 		return nil, errors.New("GetRsNode(): unexpected Node format. Possibly program error.")
 	}
 
+	// Marshal mm and Unmarshal BaseNode to get BaseNode.
 	var base uio.BaseNode
-	typ, ok := mm["NodeType"].(float64)
-	if !ok {
-		return nil, errors.New("GetRsNode(): unexpected NodeType format")
+
+	b, err := json.Marshal(mm)
+	if err != nil {
+		return nil, err
 	}
-	base.NodeType = int(typ)
-	p, ok := mm["NodePath"].(string)
-	if !ok {
-		return nil, errors.New("GetRsNode(): unexpected NodePath format")
-	}
-	base.NodePath = p
-	n, ok := mm["NodeName"].(string)
-	if !ok {
-		return nil, errors.New("GetRsNode(): unexpected NodeName format")
-	}
-	base.NodeName = n
-	s, ok := mm["Siz"].(float64)
-	if !ok {
-		return nil, errors.New("GetRsNode(): unexpected Siz format")
-	}
-	base.Siz = uint64(s)
-	so, ok := mm["StartOffset"].(float64)
-	if !ok {
-		return nil, errors.New("GetRsNode(): unexpected StartOffset format")
-	}
-	base.StartOffset = uint64(so)
-	if mm["Links"] != nil {
-		li, ok := mm["Links"].([]interface{})
-		if !ok {
-			return nil, errors.New("GetRsNode(): unexpected Links format")
-		}
-		base.Links = li
-	} else {
-		base.Links = nil
+
+	if err := json.Unmarshal(b, &base); err != nil {
+		return nil, err
 	}
 
 	switch base.NodeType {
