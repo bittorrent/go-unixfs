@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
-
 	ft "github.com/TRON-US/go-unixfs"
 	uio "github.com/TRON-US/go-unixfs/io"
 	"github.com/TRON-US/go-unixfs/util"
@@ -264,9 +262,10 @@ func ObtainMetadataFromDag(ctx context.Context, metaNode ipld.Node, dserv ipld.N
 	}
 
 	// Split the buf into two byte arrays.
-	ts := strings.SplitN(string(buf), "}#{", 2)
-	metaBuf := append([]byte(ts[0]), '}')
-	treeBuf := append([]byte("{"), []byte(ts[1])...)
+	metaBuf, treeBuf, err := util.GetMetadataList(buf)
+	if err != nil {
+		return nil, err
+	}
 
 	// Read RsMetaMap
 	var rsMeta chunker.RsMetaMap
