@@ -747,7 +747,7 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 			// Combine two JSON format byte arrays. E.g.,
 			// `{"price":12.22} + `{"number":1234}` -> `{"price":12.22,"number":1234}`
 			metadata[0] = ','
-			metadata = append(append(metadata[:], ','), encodedTree[:]...)
+			metadata = append(append(metadata[:], '#'), encodedTree[:]...)
 			offset := int(fileSize) - treeSize - 2
 			nmod, err := mdm.WriteAt(metadata, int64(offset))
 			if err != nil {
