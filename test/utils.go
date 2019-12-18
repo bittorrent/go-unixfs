@@ -95,16 +95,19 @@ func ReedSolomonMetaBytes(numData, numParity, fileSize uint64) []byte {
 }
 
 func ExtendMetaBytes(existing []byte, extended []byte) []byte {
+	var returnBytes []byte
 	if existing != nil {
 		// Splice two meta json objects
 		if extended != nil {
-			return append(append(existing[:len(existing)-1], ','), extended[1:]...)
+			returnBytes = append(append(existing[:len(existing)-1], ','), extended[1:]...)
 		} else {
-			return existing
+			returnBytes = existing
 		}
 	} else {
-		return extended
+		returnBytes = extended
 	}
+	returnBytes = append(append(returnBytes[:len(returnBytes)], '#'), []byte("{}")...)
+	return returnBytes
 }
 
 func UseReedSolomon(numData, numParity, fileSize uint64, mdata []byte, chkSize uint64) (NodeOpts, []byte) {

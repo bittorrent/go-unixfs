@@ -17,7 +17,7 @@ import (
 // stream Read or Seek on this reader.
 // Everything will be pre-filled in memory before supporting DagReader
 // operations from a []byte reader.
-type reedSolomonDagReader struct {
+type ReedSolomonDagReader struct {
 	*bytes.Reader // for Reader, Seeker, and WriteTo
 }
 
@@ -33,10 +33,10 @@ type nodeBufIndex struct {
 // Optionally, accepts a list of missing shard hashes for repair and returns
 // the buffered data readers on any missing shards (nil for already existing).
 func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGetter,
-	numData, numParity, size uint64, missingShards []cid.Cid) (DagReader, []io.Reader, error) {
+	numData, numParity, size uint64, isDir bool, missingShards []cid.Cid) (DagReader, []io.Reader, *bytes.Buffer, error) {
 	totalShards := int(numData + numParity)
 	if totalShards != len(n.Links()) {
-		return nil, nil, fmt.Errorf("number of links under node [%d] does not match set data + parity [%d]",
+		return nil, nil, nil, fmt.Errorf("number of links under node [%d] does not match set data + parity [%d]",
 			len(n.Links()), totalShards)
 	}
 
@@ -49,7 +49,7 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 	for i, ms := range missingShards {
 		index, ok := linkIndexMap[ms.String()]
 		if !ok {
-			return nil, nil, fmt.Errorf("missing shard hash [%s] is not found", ms.String())
+			return nil, nil, nil, fmt.Errorf("missing shard hash [%s] is not found", ms.String())
 		}
 		missingIndexMap[index] = i
 	}
@@ -94,9 +94,9 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 			break
 		}
 	}
-	cancel()
+	cancel() // Without this, goroutines will continue.
 	if valid < int(numData) {
-		return nil, nil, fmt.Errorf("unable to obtain at least [%d] shards to join original file", numData)
+		return nil, nil, nil, fmt.Errorf("unable to obtain at least [%d] shards to join original file", numData)
 	}
 
 	// Check if we already have everything
@@ -111,7 +111,7 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 	// Create rs stream
 	rss, err := rs.NewStreamC(int(numData), int(numParity), true, true)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Reconstruct if missing some data shards
@@ -134,7 +134,7 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 		}
 		err = rss.Reconstruct(valid, fill)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		// Only return missing shards that are actually missing
 		// (valid means it's already locally available)
@@ -156,24 +156,24 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 	var dataBuf bytes.Buffer
 	err = rss.Join(&dataBuf, shards, int64(size))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return &reedSolomonDagReader{Reader: bytes.NewReader(dataBuf.Bytes())}, missingReaders, nil
+	return &ReedSolomonDagReader{Reader: bytes.NewReader(dataBuf.Bytes())}, missingReaders, &dataBuf, nil
 }
 
 // Size returns the total size of the data from the decoded DAG structured file
 // using reed solomon algorithm.
-func (rsdr *reedSolomonDagReader) Size() uint64 {
+func (rsdr *ReedSolomonDagReader) Size() uint64 {
 	return uint64(rsdr.Len())
 }
 
 // Close has no effect since the underlying reader is a buffer.
-func (rsdr *reedSolomonDagReader) Close() error {
+func (rsdr *ReedSolomonDagReader) Close() error {
 	return nil
 }
 
 // CtxReadFull is just a Read since there is no context for buffer.
-func (rsdr *reedSolomonDagReader) CtxReadFull(ctx context.Context, out []byte) (int, error) {
+func (rsdr *ReedSolomonDagReader) CtxReadFull(ctx context.Context, out []byte) (int, error) {
 	return rsdr.Read(out)
 }

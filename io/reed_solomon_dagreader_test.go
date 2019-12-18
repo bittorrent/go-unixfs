@@ -22,8 +22,8 @@ func TestReedSolomonRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, _, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
-		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)), nil)
+	reader, _, _, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
+		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)), false, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,8 +58,8 @@ func TestReedSolomonWithMetadataRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	reader, _, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
-		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)), nil)
+	reader, _, _, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
+		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)), false, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,8 +105,8 @@ func TestReedSolomonReadRepair(t *testing.T) {
 	// Randomly remove some sharded nodes and repair the missing
 	rsnode, removed, removedIndex := testu.RandomRemoveNodes(t, ctx, node, dserv, 10)
 
-	reader, repaired, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
-		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)), removed)
+	reader, repaired, _, err := NewReedSolomonDagReader(ctx, rsnode, dserv,
+		testu.TestRsDefaultNumData, testu.TestRsDefaultNumParity, uint64(len(inbuf)), false, removed)
 	if err != nil {
 		t.Fatal(err)
 	}
