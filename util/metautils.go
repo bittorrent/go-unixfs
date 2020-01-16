@@ -120,8 +120,18 @@ func CreateMetadataList(metaBytes []byte, dirTreeBytes []byte) []byte {
 // Note that chunker.RsMetaMap.IsDir indicates or true when the second array has contents.
 func GetMetadataList(bytes []byte) ([]byte, []byte, error) {
 	ts := strings.SplitN(string(bytes), "}#{", 2)
+	if ts == nil {
+		return nil, nil, errors.New("unexpected input with nil as result of SplitN")
+	}
+
+	// Now we can assume that len >= 1
+	len := len(ts)
 
 	metaBuf := append([]byte(ts[0]), '}')
+	if len == 1 {
+		return metaBuf, nil, nil
+	}
+
 	treeBuf := append([]byte("{"), []byte(ts[1])...)
 
 	return metaBuf, treeBuf, nil
