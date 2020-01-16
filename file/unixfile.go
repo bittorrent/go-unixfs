@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	ft "github.com/TRON-US/go-unixfs"
 	uio "github.com/TRON-US/go-unixfs/io"
 	"github.com/TRON-US/go-unixfs/util"
@@ -18,6 +19,10 @@ import (
 // Number to file to prefetch in directories
 // TODO: should we allow setting this via context hint?
 const prefetchFiles = 4
+
+var (
+	ErrNilTreeBuf = errors.New("treeBuf is nil for directory node")
+)
 
 type ufsDirectory struct {
 	ctx   context.Context
@@ -211,6 +216,9 @@ func NewUnixfsFile(ctx context.Context, dserv ipld.DAGService, nd ipld.Node,
 			if metaNode != nil {
 				metaStruct, err := ObtainMetadataFromDag(ctx, metaNode, dserv)
 				if err != nil {
+					if err == ErrNilTreeBuf {
+						return nil, fmt.Errorf("treeBuf is nil for [%s]", nd.Cid().String())
+					}
 					return nil, err
 				}
 				rsMeta := metaStruct.RsMeta
@@ -277,6 +285,9 @@ func ObtainMetadataFromDag(ctx context.Context, metaNode ipld.Node, dserv ipld.N
 	// Read tree metadata if the Dag is for directory.
 	var root *uio.DirNode
 	if rsMeta.IsDir {
+		if treeBuf == nil {
+			return nil, ErrNilTreeBuf
+		}
 		tmp := uio.DirNode{}
 		err = json.Unmarshal(treeBuf, &tmp)
 		if err != nil {
