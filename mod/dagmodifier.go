@@ -58,7 +58,8 @@ type DagModifier struct {
 
 type MetaDagModifier struct {
 	*DagModifier
-	db *help.DagBuilderHelper
+	db        *help.DagBuilderHelper
+	Overwrite bool
 }
 
 // NewDagModifier returns a new DagModifier, the Cid prefix for newly
@@ -73,10 +74,11 @@ func NewDagModifierBalanced(ctx context.Context, from ipld.Node, serv ipld.DAGSe
 	return newDagModifier(ctx, from, serv, spl, ml, true, noMeta)
 }
 
-func NewMetaDagModifierBalanced(mod *DagModifier, db *help.DagBuilderHelper) *MetaDagModifier {
+func NewMetaDagModifierBalanced(mod *DagModifier, db *help.DagBuilderHelper, overwrite bool) *MetaDagModifier {
 	return &MetaDagModifier{
 		mod,
 		db,
+		overwrite,
 	}
 }
 
@@ -715,6 +717,9 @@ func (mdm *MetaDagModifier) AddMetadata(root ipld.Node, metadata []byte) (ipld.N
 		exists := util.Intersects(m, inputM)
 		// Scenario #2: Update case.
 		if exists {
+			if !mdm.Overwrite {
+				return nil, errors.New("Found existing key value pairs. Use --overwrite to force to update.")
+			}
 			// Truncate(0) on the metadata sub-DAG.
 			err := mdm.Truncate(0)
 			if err != nil {
