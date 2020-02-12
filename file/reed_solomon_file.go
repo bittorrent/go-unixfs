@@ -169,6 +169,10 @@ func (it *rsIterator) Next() bool {
 	return it.err == nil
 }
 
+func (it *rsIterator) AbsRootPath() (string, error) {
+	return "", nil
+}
+
 func GetRsNode(l interface{}) (uio.Node, error) {
 	m, ok := l.(map[string]interface{})
 	if !ok {
