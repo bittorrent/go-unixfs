@@ -97,6 +97,10 @@ func (it *ufsIterator) Err() error {
 	return it.err
 }
 
+func (it *ufsIterator) AbsRootPath() (string, error) {
+	return "", nil
+}
+
 func (d *ufsDirectory) Close() error {
 	return nil
 }
