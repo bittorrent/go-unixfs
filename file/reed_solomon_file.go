@@ -215,6 +215,10 @@ func (it *rsIterator) Err() error {
 	return it.err
 }
 
+func (it *rsIterator) AbsRootPath() (string, error) {
+	return "", nil
+}
+
 type rsFile struct {
 	uio.DagReader
 }
