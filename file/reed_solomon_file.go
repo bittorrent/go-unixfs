@@ -219,6 +219,9 @@ func (it *rsIterator) Err() error {
 	return it.err
 }
 
+func (it *rsIterator) SetReedSolomon() {
+}
+
 type rsFile struct {
 	uio.DagReader
 }
