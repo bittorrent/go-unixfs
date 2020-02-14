@@ -1014,7 +1014,7 @@ func testBalancedMetaDagAppend(t *testing.T, opts testu.NodeOpts, userDataSize i
 	if err != nil {
 		t.Fatal(err)
 	}
-	mdagmod := NewMetaDagModifierBalanced(dagmod, db)
+	mdagmod := NewMetaDagModifierBalanced(dagmod, db, true)
 
 	// Append metadata.
 	// Note combining two JSON byte arrays like below does not happen here in unit tests:

@@ -101,6 +101,9 @@ func (it *ufsIterator) AbsRootPath() (string, error) {
 	return "", nil
 }
 
+func (it *ufsIterator) SetReedSolomon() {
+}
+
 func (d *ufsDirectory) Close() error {
 	return nil
 }

@@ -219,6 +219,9 @@ func (it *rsIterator) AbsRootPath() (string, error) {
 	return "", nil
 }
 
+func (it *rsIterator) SetReedSolomon() {
+}
+
 type rsFile struct {
 	uio.DagReader
 }
