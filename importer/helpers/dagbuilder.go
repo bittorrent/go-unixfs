@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"sync"
 
 	dag "github.com/ipfs/go-merkledag"
 
@@ -41,6 +42,7 @@ type DagBuilderHelperInterface interface {
 // dagBuilderHelper contains the shared fields among various different helpers
 // under the same DAG.
 type dagBuilderHelper struct {
+	dmutex     *sync.Mutex // shared in multi case
 	dserv      ipld.DAGService
 	spl        chunker.Splitter
 	recvdErr   error
@@ -107,6 +109,9 @@ type DagBuilderParams struct {
 
 	// TrickleFormat indicates the client requested trickle tree format
 	TrickleFormat bool
+
+	// Internal mutex for guaranteeing goroutine safety within multi-dagbuilder case
+	dMutex sync.Mutex
 }
 
 // New generates a new DagBuilderHelper from the given params and a given
@@ -115,6 +120,7 @@ type DagBuilderParams struct {
 // will contain underlying DagBuilderHelpers.
 func (dbp *DagBuilderParams) New(spl chunker.Splitter) (*DagBuilderHelper, error) {
 	db := dagBuilderHelper{
+		dmutex:     &dbp.dMutex,
 		dserv:      dbp.Dagserv,
 		spl:        spl,
 		rawLeaves:  dbp.RawLeaves,
@@ -363,6 +369,8 @@ func (db *DagBuilderHelper) ProcessFileStore(node ipld.Node, dataSize uint64) ip
 
 // Add inserts the given node in the DAGService.
 func (db *DagBuilderHelper) Add(node ipld.Node) error {
+	db.dmutex.Lock()
+	defer db.dmutex.Unlock()
 	return db.dserv.Add(context.TODO(), node)
 }
 
