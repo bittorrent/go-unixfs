@@ -97,10 +97,6 @@ func (it *ufsIterator) Err() error {
 	return it.err
 }
 
-func (it *ufsIterator) AbsRootPath() (string, error) {
-	return "", nil
-}
-
 func (it *ufsIterator) SetReedSolomon() {
 }
 
@@ -139,6 +135,10 @@ func (d *ufsDirectory) Entries() files.DirIterator {
 
 func (d *ufsDirectory) Size() (int64, error) {
 	return d.size, nil
+}
+
+func (f *ufsDirectory) SetSize(size int64) error {
+	return errors.New("not supported")
 }
 
 type ufsFile struct {
