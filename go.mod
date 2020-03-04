@@ -22,5 +22,3 @@ require (
 )
 
 go 1.13
-
-replace github.com/TRON-US/go-btfs-files => ../go-btfs-files
