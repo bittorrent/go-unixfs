@@ -91,6 +91,10 @@ func (d *rsDirectory) Size() (int64, error) {
 	return d.size, nil
 }
 
+func (f *rsDirectory) SetSize(size int64) error {
+	return errors.New("not supported")
+}
+
 type rsIterator struct {
 	state     int
 	ctx       context.Context
@@ -167,10 +171,6 @@ func (it *rsIterator) Next() bool {
 	}
 
 	return it.err == nil
-}
-
-func (it *rsIterator) AbsRootPath() (string, error) {
-	return "", nil
 }
 
 func GetRsNode(l interface{}) (uio.Node, error) {
