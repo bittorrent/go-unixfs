@@ -100,6 +100,9 @@ func (it *ufsIterator) Err() error {
 func (it *ufsIterator) SetReedSolomon() {
 }
 
+func (it *ufsIterator) BreadthFirstTraversal() {
+}
+
 func (d *ufsDirectory) Close() error {
 	return nil
 }
