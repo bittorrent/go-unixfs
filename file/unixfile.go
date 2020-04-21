@@ -141,6 +141,10 @@ func (f *ufsDirectory) SetSize(size int64) error {
 	return errors.New("not supported")
 }
 
+func (f *ufsDirectory) IsReedSolomon() bool {
+	return false
+}
+
 type ufsFile struct {
 	uio.DagReader
 }
