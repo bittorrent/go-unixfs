@@ -97,7 +97,7 @@ func (it *ufsIterator) Err() error {
 	return it.err
 }
 
-func (it *ufsIterator) SetReedSolomon() {
+func (it *ufsIterator) BreadthFirstTraversal() {
 }
 
 func (d *ufsDirectory) Close() error {
@@ -139,6 +139,10 @@ func (d *ufsDirectory) Size() (int64, error) {
 
 func (f *ufsDirectory) SetSize(size int64) error {
 	return errors.New("not supported")
+}
+
+func (f *ufsDirectory) IsReedSolomon() bool {
+	return false
 }
 
 type ufsFile struct {

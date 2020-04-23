@@ -95,13 +95,18 @@ func (f *rsDirectory) SetSize(size int64) error {
 	return errors.New("not supported")
 }
 
+func (f *rsDirectory) IsReedSolomon() bool {
+	return true
+}
+
 type rsIterator struct {
-	state     int
-	ctx       context.Context
-	cidString string
-	files     chan interface{}
-	dserv     ipld.DAGService
-	rsDir     *rsDirectory
+	state                 int
+	ctx                   context.Context
+	cidString             string
+	files                 chan interface{}
+	dserv                 ipld.DAGService
+	rsDir                 *rsDirectory
+	breadthFirstTraversal bool
 
 	curName string
 	curFile files.Node
@@ -162,7 +167,8 @@ func (it *rsIterator) Next() bool {
 	case *uio.DirNode:
 		it.curFile, it.err = NewReedSolomonSubDirectory(it.ctx, it.dserv, it.cidString, nd)
 	case *uio.FileNode:
-		it.curFile, it.err = NewReedSolomonFileUnderDirectory(it.ctx, it.dserv, it.cidString, nd)
+		it.curFile, it.err =
+			NewReedSolomonFileUnderDirectory(it.ctx, it.dserv, it.cidString, nd, it.breadthFirstTraversal)
 	case *uio.SymlinkNode:
 		it.curFile, it.err = files.NewLinkFile(nd.Data, nil), nil
 	default:
@@ -219,7 +225,8 @@ func (it *rsIterator) Err() error {
 	return it.err
 }
 
-func (it *rsIterator) SetReedSolomon() {
+func (it *rsIterator) BreadthFirstTraversal() {
+	it.breadthFirstTraversal = true
 }
 
 type rsFile struct {
@@ -321,7 +328,8 @@ func NewReedSolomonSubDirectory(ctx context.Context, dserv ipld.DAGService, cid 
 // NewReedSolomonFileUnderDirectory returns a files.Node for the given `nd` Node.
 // This functioon is called within the context of Reed-Solomon DAG for directory.
 // The given `nd` is a uio.FileNode and is used to create a reader.
-func NewReedSolomonFileUnderDirectory(ctx context.Context, dserv ipld.DAGService, cid string, nd uio.Node) (files.Node, error) {
+func NewReedSolomonFileUnderDirectory(
+	ctx context.Context, dserv ipld.DAGService, cid string, nd uio.Node, bfs bool) (files.Node, error) {
 	// Locking is for synchronizing write access to rsDagInstance.offset.
 	// But rsDagInstance.offset may not be necessary. We use this field to verify the offset in `nd`.
 	rsDagInstance := GetDag(ctx, cid)
@@ -340,7 +348,7 @@ func NewReedSolomonFileUnderDirectory(ctx context.Context, dserv ipld.DAGService
 
 	b := rsDagInstance.buff.Bytes()
 	offset := fNode.StartOffset
-	if rsDagInstance.offset != offset {
+	if !bfs && rsDagInstance.offset != offset {
 		return nil, errors.New("offset from the given FileNode is invalid.")
 	}
 	newOffset := offset + uint64(fNode.NodeSize())
