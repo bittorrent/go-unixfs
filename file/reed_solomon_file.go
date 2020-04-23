@@ -225,9 +225,6 @@ func (it *rsIterator) Err() error {
 	return it.err
 }
 
-func (it *rsIterator) SetReedSolomon() {
-}
-
 func (it *rsIterator) BreadthFirstTraversal() {
 	it.breadthFirstTraversal = true
 }

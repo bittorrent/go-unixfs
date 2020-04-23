@@ -97,9 +97,6 @@ func (it *ufsIterator) Err() error {
 	return it.err
 }
 
-func (it *ufsIterator) SetReedSolomon() {
-}
-
 func (it *ufsIterator) BreadthFirstTraversal() {
 }
 
