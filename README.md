@@ -3,7 +3,6 @@ go-unixfs
 
 > go-unixfs implements unix-like filesystem utilities on top of an ipld merkledag
 
-
 ## Table of Contents
 
 - [Directory](#directory)
