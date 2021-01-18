@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"github.com/TRON-US/go-unixfs/importer/balanced"
 	ihelper "github.com/TRON-US/go-unixfs/importer/helpers"
@@ -57,17 +58,25 @@ func (d *rsDirectory) Entries() files.DirIterator {
 
 	fileCh := make(chan interface{}, prefetchFiles)
 	errCh := make(chan error, 1)
+
+	// rsDirectory is retrieved from cache, so ctx may be expired
+	ctx := d.ctx
+	if ctx == nil || ctx.Err() != nil {
+		ctx, _ = context.WithTimeout(context.Background(), time.Hour)
+		ctx = context.WithValue(ctx, d.cidString, d.ctx.Value(d.cidString))
+	}
+
 	// Invoke goroutine to provide links of the current receiver `d`
 	// via `fileCh`.
 	go func() {
-		errCh <- d.dir.ForEachLink(d.ctx, func(link interface{}) error {
-			if d.ctx.Err() != nil {
-				return d.ctx.Err()
+		errCh <- d.dir.ForEachLink(ctx, func(link interface{}) error {
+			if ctx.Err() != nil {
+				return ctx.Err()
 			}
 			select {
 			case fileCh <- link:
-			case <-d.ctx.Done():
-				return d.ctx.Err()
+			case <-ctx.Done():
+				return ctx.Err()
 			}
 			return nil
 		})
@@ -78,7 +87,7 @@ func (d *rsDirectory) Entries() files.DirIterator {
 	}()
 
 	return &rsIterator{
-		ctx:                   d.ctx,
+		ctx:                   ctx,
 		cidString:             d.cidString,
 		files:                 fileCh,
 		rsDir:                 d,
