@@ -78,12 +78,13 @@ func (d *rsDirectory) Entries() files.DirIterator {
 	}()
 
 	return &rsIterator{
-		ctx:       d.ctx,
-		cidString: d.cidString,
-		files:     fileCh,
-		rsDir:     d,
-		errCh:     errCh,
-		dserv:     d.dserv,
+		ctx:                   d.ctx,
+		cidString:             d.cidString,
+		files:                 fileCh,
+		rsDir:                 d,
+		errCh:                 errCh,
+		dserv:                 d.dserv,
+		breadthFirstTraversal: true,
 	}
 }
 
