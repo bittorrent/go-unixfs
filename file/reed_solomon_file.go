@@ -42,7 +42,7 @@ type ReedSolomonDag struct {
 	cidString string
 }
 
-type rsDirectory struct {
+type RsDirectory struct {
 	ctx       context.Context
 	dserv     ipld.DAGService
 	dir       *uio.ReedSolomonDirectory
@@ -50,11 +50,11 @@ type rsDirectory struct {
 	cidString string
 }
 
-func (d *rsDirectory) Close() error {
+func (d *RsDirectory) Close() error {
 	return nil
 }
 
-func (d *rsDirectory) Entries() files.DirIterator {
+func (d *RsDirectory) Entries() files.DirIterator {
 
 	fileCh := make(chan interface{}, prefetchFiles)
 	errCh := make(chan error, 1)
@@ -86,7 +86,7 @@ func (d *rsDirectory) Entries() files.DirIterator {
 		close(fileCh)
 	}()
 
-	return &rsIterator{
+	return &RsIterator{
 		ctx:                   ctx,
 		cidString:             d.cidString,
 		files:                 fileCh,
@@ -97,25 +97,25 @@ func (d *rsDirectory) Entries() files.DirIterator {
 	}
 }
 
-func (d *rsDirectory) Size() (int64, error) {
+func (d *RsDirectory) Size() (int64, error) {
 	return d.size, nil
 }
 
-func (f *rsDirectory) SetSize(size int64) error {
+func (f *RsDirectory) SetSize(size int64) error {
 	return errors.New("not supported")
 }
 
-func (f *rsDirectory) IsReedSolomon() bool {
+func (f *RsDirectory) IsReedSolomon() bool {
 	return true
 }
 
-type rsIterator struct {
+type RsIterator struct {
 	state                 int
 	ctx                   context.Context
 	cidString             string
 	files                 chan interface{}
 	dserv                 ipld.DAGService
-	rsDir                 *rsDirectory
+	rsDir                 *RsDirectory
 	breadthFirstTraversal bool
 
 	curName string
@@ -125,15 +125,15 @@ type rsIterator struct {
 	errCh chan error
 }
 
-func (it *rsIterator) Name() string {
+func (it *RsIterator) Name() string {
 	return it.curName
 }
 
-func (it *rsIterator) Node() files.Node {
+func (it *RsIterator) Node() files.Node {
 	return it.curFile
 }
 
-func (it *rsIterator) Next() bool {
+func (it *RsIterator) Next() bool {
 	if it.err != nil {
 		return false
 	}
@@ -231,11 +231,11 @@ func GetRsNode(l interface{}) (uio.Node, error) {
 	}
 }
 
-func (it *rsIterator) Err() error {
+func (it *RsIterator) Err() error {
 	return it.err
 }
 
-func (it *rsIterator) BreadthFirstTraversal() {
+func (it *RsIterator) BreadthFirstTraversal() {
 	it.breadthFirstTraversal = true
 }
 
@@ -255,7 +255,7 @@ func newReedSolomonDir(ctx context.Context, dserv ipld.DAGService, cid string, n
 
 	size := nd.NodeSize()
 
-	return &rsDirectory{
+	return &RsDirectory{
 		ctx:       ctx,
 		dserv:     dserv,
 		dir:       dir,
