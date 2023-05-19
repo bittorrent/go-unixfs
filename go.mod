@@ -28,7 +28,7 @@ require (
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 )
 
-replace github.com/TRON-US/go-btfs-files v0.2.0 => github.com/imstevez/go-btfs-files v0.2.0
+replace github.com/TRON-US/go-btfs-files v0.2.0 => github.com/imstevez/go-btfs-files v0.3.0-pre
 
 require (
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
