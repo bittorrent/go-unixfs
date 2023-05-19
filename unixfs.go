@@ -74,7 +74,7 @@ func FilePBData(data []byte, totalsize uint64) []byte {
 	return data
 }
 
-//FolderPBData returns Bytes that represent a Directory.
+// FolderPBData returns Bytes that represent a Directory.
 func FolderPBData() []byte {
 	pbfile := new(pb.Data)
 	typ := pb.Data_Directory
@@ -88,7 +88,7 @@ func FolderPBData() []byte {
 	return data
 }
 
-//WrapData marshals raw bytes into a `Data_Raw` type protobuf message.
+// WrapData marshals raw bytes into a `Data_Raw` type protobuf message.
 func WrapData(b []byte) []byte {
 	pbdata := new(pb.Data)
 	typ := pb.Data_Raw
@@ -105,7 +105,7 @@ func WrapData(b []byte) []byte {
 	return out
 }
 
-//SymlinkData returns a `Data_Symlink` protobuf message for the path you specify.
+// SymlinkData returns a `Data_Symlink` protobuf message for the path you specify.
 func SymlinkData(path string) ([]byte, error) {
 	pbdata := new(pb.Data)
 	typ := pb.Data_Symlink
@@ -164,9 +164,9 @@ func size(pbdata *pb.Data) (uint64, error) {
 	switch pbdata.GetType() {
 	case pb.Data_Directory, pb.Data_HAMTShard:
 		return 0, errors.New("can't get data size of directory")
-	case pb.Data_File, pb.Data_TokenMeta:
+	case pb.Data_File, pb.Data_Raw, pb.Data_TokenMeta:
 		return pbdata.GetFilesize(), nil
-	case pb.Data_Symlink, pb.Data_Raw:
+	case pb.Data_Symlink:
 		return uint64(len(pbdata.GetData())), nil
 	default:
 		return 0, errors.New("unrecognized node data type")
@@ -369,6 +369,11 @@ func BytesForMetadata(m *Metadata) ([]byte, error) {
 // EmptyDirNode creates an empty folder Protonode.
 func EmptyDirNode() *dag.ProtoNode {
 	return dag.NodeWithData(FolderPBData())
+}
+
+// EmptyFileNode creates an empty file Protonode.
+func EmptyFileNode() *dag.ProtoNode {
+	return dag.NodeWithData(FilePBData(nil, 0))
 }
 
 // ReadUnixFSNodeData extracts the UnixFS data from an IPLD node.
