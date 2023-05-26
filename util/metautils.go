@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	ft "github.com/TRON-US/go-unixfs"
-	uio "github.com/TRON-US/go-unixfs/io"
+	ft "github.com/bittorrent/go-unixfs"
+	uio "github.com/bittorrent/go-unixfs/io"
 
 	ipld "github.com/ipfs/go-ipld-format"
 	mdag "github.com/ipfs/go-merkledag"

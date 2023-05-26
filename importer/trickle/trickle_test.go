@@ -8,11 +8,11 @@ import (
 	mrand "math/rand"
 	"testing"
 
-	ft "github.com/TRON-US/go-unixfs"
-	h "github.com/TRON-US/go-unixfs/importer/helpers"
-	uio "github.com/TRON-US/go-unixfs/io"
+	ft "github.com/bittorrent/go-unixfs"
+	h "github.com/bittorrent/go-unixfs/importer/helpers"
+	uio "github.com/bittorrent/go-unixfs/io"
 
-	chunker "github.com/TRON-US/go-btfs-chunker"
+	chunker "github.com/bittorrent/go-btfs-chunker"
 	u "github.com/ipfs/go-ipfs-util"
 	ipld "github.com/ipfs/go-ipld-format"
 	merkledag "github.com/ipfs/go-merkledag"

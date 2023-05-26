@@ -7,13 +7,13 @@ import (
 	"math"
 	"testing"
 
-	"github.com/TRON-US/go-unixfs/internal"
+	"github.com/bittorrent/go-unixfs/internal"
 
 	mdtest "github.com/ipfs/go-merkledag/test"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/TRON-US/go-unixfs"
-	"github.com/TRON-US/go-unixfs/hamt"
+	"github.com/bittorrent/go-unixfs"
+	"github.com/bittorrent/go-unixfs/hamt"
 
 	ipld "github.com/ipfs/go-ipld-format"
 )

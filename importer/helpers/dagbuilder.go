@@ -10,11 +10,11 @@ import (
 
 	dag "github.com/ipfs/go-merkledag"
 
-	ft "github.com/TRON-US/go-unixfs"
-	pb "github.com/TRON-US/go-unixfs/pb"
+	ft "github.com/bittorrent/go-unixfs"
+	pb "github.com/bittorrent/go-unixfs/pb"
 
-	chunker "github.com/TRON-US/go-btfs-chunker"
-	files "github.com/TRON-US/go-btfs-files"
+	chunker "github.com/bittorrent/go-btfs-chunker"
+	files "github.com/bittorrent/go-btfs-files"
 	cid "github.com/ipfs/go-cid"
 	pi "github.com/ipfs/go-ipfs-posinfo"
 	ipld "github.com/ipfs/go-ipld-format"

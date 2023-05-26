@@ -11,7 +11,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	dag "github.com/ipfs/go-merkledag"
 
-	pb "github.com/TRON-US/go-unixfs/pb"
+	pb "github.com/bittorrent/go-unixfs/pb"
 	ipld "github.com/ipfs/go-ipld-format"
 )
 

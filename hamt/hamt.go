@@ -30,8 +30,8 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	format "github.com/TRON-US/go-unixfs"
-	"github.com/TRON-US/go-unixfs/internal"
+	format "github.com/bittorrent/go-unixfs"
+	"github.com/bittorrent/go-unixfs/internal"
 
 	bitfield "github.com/ipfs/go-bitfield"
 	cid "github.com/ipfs/go-cid"

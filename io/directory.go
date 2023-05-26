@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/TRON-US/go-unixfs/private/linksize"
+	"github.com/bittorrent/go-unixfs/private/linksize"
 
 	"github.com/alecthomas/units"
 	ipld "github.com/ipfs/go-ipld-format"
 	logging "github.com/ipfs/go-log"
 	mdag "github.com/ipfs/go-merkledag"
 
-	format "github.com/TRON-US/go-unixfs"
-	hamt "github.com/TRON-US/go-unixfs/hamt"
+	format "github.com/bittorrent/go-unixfs"
+	hamt "github.com/bittorrent/go-unixfs/hamt"
 
 	cid "github.com/ipfs/go-cid"
 )

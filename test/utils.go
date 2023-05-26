@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	ft "github.com/TRON-US/go-unixfs"
-	balanced "github.com/TRON-US/go-unixfs/importer/balanced"
-	h "github.com/TRON-US/go-unixfs/importer/helpers"
-	trickle "github.com/TRON-US/go-unixfs/importer/trickle"
+	ft "github.com/bittorrent/go-unixfs"
+	balanced "github.com/bittorrent/go-unixfs/importer/balanced"
+	h "github.com/bittorrent/go-unixfs/importer/helpers"
+	trickle "github.com/bittorrent/go-unixfs/importer/trickle"
 
-	chunker "github.com/TRON-US/go-btfs-chunker"
+	chunker "github.com/bittorrent/go-btfs-chunker"
 	cid "github.com/ipfs/go-cid"
 	u "github.com/ipfs/go-ipfs-util"
 	ipld "github.com/ipfs/go-ipld-format"

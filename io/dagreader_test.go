@@ -2,17 +2,17 @@ package io
 
 import (
 	"bytes"
-	"github.com/TRON-US/go-unixfs/importer/helpers"
+	"github.com/bittorrent/go-unixfs/importer/helpers"
 	"io"
 	"strings"
 	"testing"
 
-	"github.com/TRON-US/go-unixfs"
+	"github.com/bittorrent/go-unixfs"
 	mdag "github.com/ipfs/go-merkledag"
 
 	"context"
 
-	testu "github.com/TRON-US/go-unixfs/test"
+	testu "github.com/bittorrent/go-unixfs/test"
 )
 
 func TestBasicRead(t *testing.T) {

@@ -10,15 +10,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/TRON-US/go-unixfs/importer/balanced"
-	ihelper "github.com/TRON-US/go-unixfs/importer/helpers"
-	"github.com/TRON-US/go-unixfs/importer/trickle"
-	"github.com/TRON-US/go-unixfs/util"
+	"github.com/bittorrent/go-unixfs/importer/balanced"
+	ihelper "github.com/bittorrent/go-unixfs/importer/helpers"
+	"github.com/bittorrent/go-unixfs/importer/trickle"
+	"github.com/bittorrent/go-unixfs/util"
 
-	uio "github.com/TRON-US/go-unixfs/io"
+	uio "github.com/bittorrent/go-unixfs/io"
 
-	chunker "github.com/TRON-US/go-btfs-chunker"
-	files "github.com/TRON-US/go-btfs-files"
+	chunker "github.com/bittorrent/go-btfs-chunker"
+	files "github.com/bittorrent/go-btfs-files"
 	cid "github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
 )

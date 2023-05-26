@@ -5,10 +5,10 @@ import (
 	"io/ioutil"
 	"testing"
 
-	files "github.com/TRON-US/go-btfs-files"
-	"github.com/TRON-US/go-unixfs/importer/helpers"
-	uio "github.com/TRON-US/go-unixfs/io"
-	testu "github.com/TRON-US/go-unixfs/test"
+	files "github.com/bittorrent/go-btfs-files"
+	"github.com/bittorrent/go-unixfs/importer/helpers"
+	uio "github.com/bittorrent/go-unixfs/io"
+	testu "github.com/bittorrent/go-unixfs/test"
 )
 
 func TestUnixFsFileRead(t *testing.T) {

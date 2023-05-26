@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	testu "github.com/TRON-US/go-unixfs/test"
+	testu "github.com/bittorrent/go-unixfs/test"
 )
 
 func TestReedSolomonRead(t *testing.T) {

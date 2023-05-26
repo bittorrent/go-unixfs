@@ -3,7 +3,7 @@ package io
 import (
 	"context"
 	"errors"
-	files "github.com/TRON-US/go-btfs-files"
+	files "github.com/bittorrent/go-btfs-files"
 	ipld "github.com/ipfs/go-ipld-format"
 )
 

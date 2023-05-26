@@ -42,7 +42,7 @@ The `test` subpackage provides several utilities to make testing unixfs related 
 ## Install
 
 ```sh
-go get github.com/TRON-US/go-unixfs
+go get github.com/bittorrent/go-unixfs
 ```
 
 ## Contribute
@@ -53,4 +53,4 @@ Small note: If editing the Readme, please conform to the [standard-readme](https
 
 ## License
 
-MIT © TRON-US
+MIT © Bittorrent

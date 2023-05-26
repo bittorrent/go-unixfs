@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/bits"
 
-	"github.com/TRON-US/go-unixfs/internal"
+	"github.com/bittorrent/go-unixfs/internal"
 
 	"github.com/spaolacci/murmur3"
 )
