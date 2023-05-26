@@ -6,7 +6,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/TRON-US/go-unixfs"
+	"github.com/bittorrent/go-unixfs"
 	ipld "github.com/ipfs/go-ipld-format"
 	mdag "github.com/ipfs/go-merkledag"
 )

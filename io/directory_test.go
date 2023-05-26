@@ -22,10 +22,10 @@ import (
 	mdag "github.com/ipfs/go-merkledag"
 	mdtest "github.com/ipfs/go-merkledag/test"
 
-	ft "github.com/TRON-US/go-unixfs"
-	"github.com/TRON-US/go-unixfs/hamt"
-	"github.com/TRON-US/go-unixfs/internal"
-	"github.com/TRON-US/go-unixfs/private/linksize"
+	ft "github.com/bittorrent/go-unixfs"
+	"github.com/bittorrent/go-unixfs/hamt"
+	"github.com/bittorrent/go-unixfs/internal"
+	"github.com/bittorrent/go-unixfs/private/linksize"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -3,11 +3,11 @@
 package importer
 
 import (
-	bal "github.com/TRON-US/go-unixfs/importer/balanced"
-	h "github.com/TRON-US/go-unixfs/importer/helpers"
-	trickle "github.com/TRON-US/go-unixfs/importer/trickle"
+	bal "github.com/bittorrent/go-unixfs/importer/balanced"
+	h "github.com/bittorrent/go-unixfs/importer/helpers"
+	trickle "github.com/bittorrent/go-unixfs/importer/trickle"
 
-	chunker "github.com/TRON-US/go-btfs-chunker"
+	chunker "github.com/bittorrent/go-btfs-chunker"
 	ipld "github.com/ipfs/go-ipld-format"
 )
 

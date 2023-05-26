@@ -6,7 +6,7 @@ import (
 
 	proto "github.com/gogo/protobuf/proto"
 
-	pb "github.com/TRON-US/go-unixfs/pb"
+	pb "github.com/bittorrent/go-unixfs/pb"
 )
 
 func TestFSNode(t *testing.T) {

@@ -3,10 +3,10 @@ package helpers
 import (
 	"encoding/json"
 
-	ft "github.com/TRON-US/go-unixfs"
-	pb "github.com/TRON-US/go-unixfs/pb"
+	ft "github.com/bittorrent/go-unixfs"
+	pb "github.com/bittorrent/go-unixfs/pb"
 
-	chunker "github.com/TRON-US/go-btfs-chunker"
+	chunker "github.com/bittorrent/go-btfs-chunker"
 	ipld "github.com/ipfs/go-ipld-format"
 )
 

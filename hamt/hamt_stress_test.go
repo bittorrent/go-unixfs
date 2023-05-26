@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	ft "github.com/TRON-US/go-unixfs"
+	ft "github.com/bittorrent/go-unixfs"
 	mdtest "github.com/ipfs/go-merkledag/test"
 
 	ipld "github.com/ipfs/go-ipld-format"

@@ -7,16 +7,16 @@ import (
 	"io"
 	"testing"
 
-	"github.com/TRON-US/go-unixfs/importer/trickle"
-	uio "github.com/TRON-US/go-unixfs/io"
-	testu "github.com/TRON-US/go-unixfs/test"
+	"github.com/bittorrent/go-unixfs/importer/trickle"
+	uio "github.com/bittorrent/go-unixfs/io"
+	testu "github.com/bittorrent/go-unixfs/test"
 	ipld "github.com/ipfs/go-ipld-format"
 	dag "github.com/ipfs/go-merkledag"
 
-	chunker "github.com/TRON-US/go-btfs-chunker"
-	"github.com/TRON-US/go-unixfs"
-	"github.com/TRON-US/go-unixfs/importer/balanced"
-	"github.com/TRON-US/go-unixfs/importer/helpers"
+	chunker "github.com/bittorrent/go-btfs-chunker"
+	"github.com/bittorrent/go-unixfs"
+	"github.com/bittorrent/go-unixfs/importer/balanced"
+	"github.com/bittorrent/go-unixfs/importer/helpers"
 	u "github.com/ipfs/go-ipfs-util"
 )
 

@@ -1,9 +1,9 @@
-module github.com/TRON-US/go-unixfs
+module github.com/bittorrent/go-unixfs
 
 require (
-	github.com/TRON-US/go-btfs-chunker v0.3.0
-	github.com/TRON-US/go-btfs-files v0.2.0
 	github.com/alecthomas/units v0.0.0-20210927113745-59d0afb8317a
+	github.com/bittorrent/go-btfs-chunker v0.4.0
+	github.com/bittorrent/go-btfs-files v0.3.0
 	github.com/gogo/protobuf v1.3.2
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/ipfs/go-bitfield v1.1.0
@@ -18,7 +18,7 @@ require (
 	github.com/ipfs/go-ipld-format v0.2.0
 	github.com/ipfs/go-log v1.0.5
 	github.com/ipfs/go-merkledag v0.5.1
-	github.com/klauspost/reedsolomon v1.9.2
+	github.com/klauspost/reedsolomon v1.9.14
 	github.com/multiformats/go-multihash v0.2.1
 	github.com/polydawn/refmt v0.0.0-20201211092308-30ac6d18308e // indirect
 	github.com/smartystreets/assertions v1.0.0 // indirect
@@ -27,8 +27,6 @@ require (
 	github.com/warpfork/go-wish v0.0.0-20200122115046-b9ea61034e4a
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 )
-
-replace github.com/TRON-US/go-btfs-files v0.2.0 => github.com/imstevez/go-btfs-files v0.3.0-pre
 
 require (
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
@@ -47,7 +45,6 @@ require (
 	github.com/ipld/go-codec-dagpb v1.3.0 // indirect
 	github.com/ipld/go-ipld-prime v0.11.0 // indirect
 	github.com/jbenet/goprocess v0.1.4 // indirect
-	github.com/klauspost/cpuid v1.2.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.1.1 // indirect
 	github.com/koron/go-ssdp v0.0.3 // indirect
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect

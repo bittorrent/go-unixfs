@@ -3,7 +3,7 @@ package io
 import (
 	"context"
 
-	ft "github.com/TRON-US/go-unixfs"
+	ft "github.com/bittorrent/go-unixfs"
 
 	ipld "github.com/ipfs/go-ipld-format"
 	dag "github.com/ipfs/go-merkledag"

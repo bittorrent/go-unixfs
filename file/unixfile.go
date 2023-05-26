@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	ft "github.com/TRON-US/go-unixfs"
-	uio "github.com/TRON-US/go-unixfs/io"
-	"github.com/TRON-US/go-unixfs/util"
+	ft "github.com/bittorrent/go-unixfs"
+	uio "github.com/bittorrent/go-unixfs/io"
+	"github.com/bittorrent/go-unixfs/util"
 
-	chunker "github.com/TRON-US/go-btfs-chunker"
-	files "github.com/TRON-US/go-btfs-files"
+	chunker "github.com/bittorrent/go-btfs-chunker"
+	files "github.com/bittorrent/go-btfs-files"
 	cid "github.com/ipfs/go-cid"
 
 	ipld "github.com/ipfs/go-ipld-format"
