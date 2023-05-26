@@ -12,6 +12,7 @@ import (
 	chunker "github.com/TRON-US/go-btfs-chunker"
 	files "github.com/TRON-US/go-btfs-files"
 	cid "github.com/ipfs/go-cid"
+
 	ipld "github.com/ipfs/go-ipld-format"
 	dag "github.com/ipfs/go-merkledag"
 )

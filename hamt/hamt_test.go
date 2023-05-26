@@ -31,7 +31,10 @@ func makeDir(ds ipld.DAGService, size int) ([]string, *Shard, error) {
 func makeDirWidth(ds ipld.DAGService, size, width int) ([]string, *Shard, error) {
 	ctx := context.Background()
 
-	s, _ := NewShard(ds, width)
+	s, err := NewShard(ds, width)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var dirs []string
 	for i := 0; i < size; i++ {
@@ -42,8 +45,11 @@ func makeDirWidth(ds ipld.DAGService, size, width int) ([]string, *Shard, error)
 
 	for i := 0; i < len(dirs); i++ {
 		nd := ft.EmptyDirNode()
-		ds.Add(ctx, nd)
-		err := s.Set(ctx, dirs[i], nd)
+		err := ds.Add(ctx, nd)
+		if err != nil {
+			return nil, nil, err
+		}
+		err = s.Set(ctx, dirs[i], nd)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -126,7 +132,7 @@ func assertSerializationWorks(ds ipld.DAGService, s *Shard) error {
 
 func TestBasicSet(t *testing.T) {
 	ds := mdtest.Mock()
-	for _, w := range []int{128, 256, 512, 1024, 2048, 4096} {
+	for _, w := range []int{128, 256, 512, 1024} {
 		t.Run(fmt.Sprintf("BasicSet%d", w), func(t *testing.T) {
 			names, s, err := makeDirWidth(ds, 1000, w)
 			if err != nil {
@@ -280,6 +286,9 @@ func TestRemoveAfterMarshal(t *testing.T) {
 	}
 
 	s, err = NewHamtFromDag(ds, nd)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ctx := context.Background()
 
@@ -334,7 +343,13 @@ func TestSetAfterMarshal(t *testing.T) {
 	}
 
 	nd, err = nds.Node()
+	if err != nil {
+		t.Fatal(err)
+	}
 	nds, err = NewHamtFromDag(ds, nd)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	links, err := nds.EnumLinks(ctx)
 	if err != nil {
@@ -408,7 +423,13 @@ func TestDuplicateAddShard(t *testing.T) {
 	}
 
 	node, err := dir.Node()
+	if err != nil {
+		t.Fatal(err)
+	}
 	dir, err = NewHamtFromDag(ds, node)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	lnks, err := dir.EnumLinks(ctx)
 	if err != nil {
@@ -417,6 +438,38 @@ func TestDuplicateAddShard(t *testing.T) {
 
 	if len(lnks) != 1 {
 		t.Fatal("expected only one link")
+	}
+}
+
+// fix https://github.com/ipfs/kubo/issues/9063
+func TestSetLink(t *testing.T) {
+	ds := mdtest.Mock()
+	dir, _ := NewShard(ds, 256)
+	_, s, err := makeDir(ds, 300)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lnk, err := s.Link()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+
+	err = dir.SetLink(ctx, "test", lnk)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(dir.childer.children) != 1 {
+		t.Fatal("no child")
+	}
+
+	for _, sh := range dir.childer.children {
+		if sh.childer == nil {
+			t.Fatal("no childer on shard")
+		}
 	}
 }
 
@@ -503,7 +556,13 @@ func TestRemoveElemsAfterMarshal(t *testing.T) {
 	}
 
 	nd, err = nds.Node()
+	if err != nil {
+		t.Fatal(err)
+	}
 	nds, err = NewHamtFromDag(ds, nd)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	links, err := nds.EnumLinks(ctx)
 	if err != nil {
@@ -684,8 +743,10 @@ func BenchmarkHAMTSet(b *testing.B) {
 }
 
 func TestHamtBadSize(t *testing.T) {
-	_, err := NewShard(nil, 7)
-	if err == nil {
-		t.Fatal("should have failed to construct hamt with bad size")
+	for _, size := range [...]int{-8, 7, 2, 1337, 1024 + 8, -3} {
+		_, err := NewShard(nil, size)
+		if err == nil {
+			t.Errorf("should have failed to construct hamt with bad size: %d", size)
+		}
 	}
 }

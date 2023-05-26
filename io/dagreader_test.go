@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"github.com/TRON-US/go-unixfs/importer/helpers"
 	"io"
-	"io/ioutil"
 	"strings"
 	"testing"
 
@@ -27,7 +26,7 @@ func TestBasicRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	outbuf, err := ioutil.ReadAll(reader)
+	outbuf, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +257,7 @@ func TestMetadataNode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	readdata, err := ioutil.ReadAll(reader)
+	readdata, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -333,12 +332,12 @@ func TestMetadataRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	outbuf, err := ioutil.ReadAll(reader)
+	outbuf, err := io.ReadAll(reader)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	moutbuf, err := ioutil.ReadAll(mreader)
+	moutbuf, err := io.ReadAll(mreader)
 	if err != nil {
 		t.Fatal(err)
 	}
