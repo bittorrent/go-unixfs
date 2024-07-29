@@ -5,7 +5,7 @@ import (
 
 	ft "github.com/bittorrent/go-unixfs"
 	hamt "github.com/bittorrent/go-unixfs/hamt"
-	dag "github.com/ipfs/go-merkledag"
+	dag "github.com/ipfs/boxo/ipld/merkledag"
 
 	ipld "github.com/ipfs/go-ipld-format"
 )

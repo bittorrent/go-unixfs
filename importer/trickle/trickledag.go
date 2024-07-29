@@ -19,12 +19,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	ft "github.com/bittorrent/go-unixfs"
 	h "github.com/bittorrent/go-unixfs/importer/helpers"
 	pb "github.com/bittorrent/go-unixfs/pb"
+	dag "github.com/ipfs/boxo/ipld/merkledag"
 	cid "github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
-	dag "github.com/ipfs/go-merkledag"
 )
 
 // depthRepeat specifies how many times to append a child tree of a
