@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	ft "github.com/bittorrent/go-unixfs"
 	uio "github.com/bittorrent/go-unixfs/io"
 	"github.com/bittorrent/go-unixfs/util"
@@ -13,8 +14,8 @@ import (
 	files "github.com/bittorrent/go-btfs-files"
 	cid "github.com/ipfs/go-cid"
 
+	dag "github.com/ipfs/boxo/ipld/merkledag"
 	ipld "github.com/ipfs/go-ipld-format"
-	dag "github.com/ipfs/go-merkledag"
 )
 
 // Number to file to prefetch in directories

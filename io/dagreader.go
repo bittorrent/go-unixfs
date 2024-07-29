@@ -7,8 +7,8 @@ import (
 	"io"
 
 	"github.com/bittorrent/go-unixfs"
+	mdag "github.com/ipfs/boxo/ipld/merkledag"
 	ipld "github.com/ipfs/go-ipld-format"
-	mdag "github.com/ipfs/go-merkledag"
 )
 
 // Common errors

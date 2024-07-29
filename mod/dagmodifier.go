@@ -18,9 +18,9 @@ import (
 	util "github.com/bittorrent/go-unixfs/util"
 
 	chunker "github.com/bittorrent/go-btfs-chunker"
+	mdag "github.com/ipfs/boxo/ipld/merkledag"
 	cid "github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
-	mdag "github.com/ipfs/go-merkledag"
 )
 
 // Common errors
@@ -669,11 +669,17 @@ func (mdm *MetaDagModifier) GetDb() *help.DagBuilderHelper {
 //
 // There are three scenarios possible:
 // Scenario #1. No existing metadata for the `root`. So this scenario is
-//    to create a new metadata sub-DAG.
+//
+//	to create a new metadata sub-DAG.
+//
 // Scenario #2. There are existing keys for the given `metadata` items.
-//    Then this is to update the metadata sub-DAG with the given items.
+//
+//	Then this is to update the metadata sub-DAG with the given items.
+//
 // Scenario #3. There are no pre-existing metadata items for the given `metadata` items.
-//    Then this scenario is to append given items to the metadata sub-DAG.
+//
+//	Then this scenario is to append given items to the metadata sub-DAG.
+//
 // TODO: trickle format
 // Preconditions include that first the given `metadata` is in compact JSON format.
 // Note that the given `metadata` should be added to the first element of the metadata list.

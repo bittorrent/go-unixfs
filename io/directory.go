@@ -10,7 +10,7 @@ import (
 	"github.com/alecthomas/units"
 	ipld "github.com/ipfs/go-ipld-format"
 	logging "github.com/ipfs/go-log"
-	mdag "github.com/ipfs/go-merkledag"
+	mdag "github.com/ipfs/boxo/ipld/merkledag"
 
 	format "github.com/bittorrent/go-unixfs"
 	hamt "github.com/bittorrent/go-unixfs/hamt"

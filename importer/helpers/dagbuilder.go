@@ -8,7 +8,7 @@ import (
 	"os"
 	"sync"
 
-	dag "github.com/ipfs/go-merkledag"
+	dag "github.com/ipfs/boxo/ipld/merkledag"
 
 	ft "github.com/bittorrent/go-unixfs"
 	pb "github.com/bittorrent/go-unixfs/pb"

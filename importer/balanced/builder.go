@@ -54,12 +54,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	ft "github.com/bittorrent/go-unixfs"
 	h "github.com/bittorrent/go-unixfs/importer/helpers"
 	pb "github.com/bittorrent/go-unixfs/pb"
+	dag "github.com/ipfs/boxo/ipld/merkledag"
 	"github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
-	dag "github.com/ipfs/go-merkledag"
 )
 
 // Layout builds a balanced DAG layout. In a balanced DAG of depth 1, leaf nodes

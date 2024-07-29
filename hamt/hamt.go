@@ -33,10 +33,10 @@ import (
 	format "github.com/bittorrent/go-unixfs"
 	"github.com/bittorrent/go-unixfs/internal"
 
+	dag "github.com/ipfs/boxo/ipld/merkledag"
 	bitfield "github.com/ipfs/go-bitfield"
 	cid "github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
-	dag "github.com/ipfs/go-merkledag"
 )
 
 const (

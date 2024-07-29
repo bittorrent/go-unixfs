@@ -9,7 +9,7 @@ import (
 	uio "github.com/bittorrent/go-unixfs/io"
 
 	ipld "github.com/ipfs/go-ipld-format"
-	mdag "github.com/ipfs/go-merkledag"
+	mdag "github.com/ipfs/boxo/ipld/merkledag"
 )
 
 // checkAndSplitMetadata returns both data root node and metadata root node if exists from
