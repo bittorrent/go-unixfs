@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"io"
+	"os"
+	"time"
 
 	"github.com/bittorrent/go-unixfs"
 	ipld "github.com/ipfs/go-ipld-format"
@@ -28,6 +30,8 @@ var (
 // types of unixfs/protobuf-encoded nodes.
 type DagReader interface {
 	ReadSeekCloser
+	Mode() os.FileMode
+	ModTime() time.Time
 	Size() uint64
 	CtxReadFull(context.Context, []byte) (int, error)
 }
@@ -43,7 +47,11 @@ type ReadSeekCloser interface {
 // NewDagReader creates a new reader object that reads the data represented by
 // the given node, using the passed in DAGService for data retrieval.
 func NewDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGetter) (DagReader, error) {
-	var size uint64
+	var (
+		size  uint64
+		mode  os.FileMode
+		mtime time.Time
+	)
 
 	switch n := n.(type) {
 	case *mdag.RawNode:
@@ -58,6 +66,8 @@ func NewDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGetter) (DagRe
 		switch fsNode.Type() {
 		case unixfs.TFile, unixfs.TRaw, unixfs.TTokenMeta:
 			size = fsNode.FileSize()
+			mode = fsNode.Mode()
+			mtime = fsNode.ModTime()
 
 		case unixfs.TDirectory, unixfs.THAMTShard:
 			// Dont allow reading directories
@@ -94,6 +104,8 @@ func NewDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGetter) (DagRe
 		serv:      serv,
 		size:      size,
 		rootNode:  n,
+		mode:      mode,
+		modTime:   mtime,
 		dagWalker: ipld.NewWalker(ctxWithCancel, ipld.NewNavigableIPLDNode(n, serv)),
 	}, nil
 }
@@ -130,7 +142,18 @@ type dagReader struct {
 
 	// Passed to the `dagWalker` that will use it to request nodes.
 	// TODO: Revisit name.
-	serv ipld.NodeGetter
+	serv    ipld.NodeGetter
+	mode    os.FileMode
+	modTime time.Time
+}
+
+func (dr *dagReader) Mode() os.FileMode {
+	return dr.mode
+}
+
+// ModTime returns the UnixFS file last modification time if set.
+func (dr *dagReader) ModTime() time.Time {
+	return dr.modTime
 }
 
 // Size returns the total size of the data from the DAG structured file.

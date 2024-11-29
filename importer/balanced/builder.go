@@ -54,6 +54,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	ft "github.com/bittorrent/go-unixfs"
 	h "github.com/bittorrent/go-unixfs/importer/helpers"
 	pb "github.com/bittorrent/go-unixfs/pb"
@@ -168,6 +169,16 @@ func Layout(db *h.DagBuilderHelper) (ipld.Node, error) {
 			return nil, err
 		}
 	}
+	if db.HasFileAttributes() {
+		root, err := newRoot.GetDagNode()
+		if err != nil {
+			return nil, err
+		}
+		err = db.SetFileAttributes(root)
+		if err != nil {
+			return nil, err
+		}
+	}
 	root, err := newRoot.Commit()
 	if err != nil {
 		return nil, err
@@ -204,6 +215,12 @@ func layout(db *h.DagBuilderHelper, addMetaDag bool) (ipld.Node, error) {
 				return nil, err
 			}
 		}
+		if db.HasFileAttributes() {
+			err = db.SetFileAttributes(root)
+			if err != nil {
+				return nil, err
+			}
+		}
 		return root, db.Add(root)
 	}
 
@@ -214,6 +231,12 @@ func layout(db *h.DagBuilderHelper, addMetaDag bool) (ipld.Node, error) {
 	root, fileSize, err := db.NewLeafDataNode(ft.TFile)
 	if err != nil {
 		return nil, err
+	}
+	if db.HasFileAttributes() {
+		err = db.SetFileAttributes(root)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Each time a DAG of a certain `depth` is filled (because it

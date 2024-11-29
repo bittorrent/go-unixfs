@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"sync"
+	"time"
 
 	dag "github.com/ipfs/go-merkledag"
 
@@ -50,6 +51,9 @@ type dagBuilderHelper struct {
 	nextData   []byte // the next item to return.
 	maxlinks   int
 	cidBuilder cid.Builder
+
+	fileMode    os.FileMode
+	fileModTime time.Time
 
 	metaDb       *MetaDagBuilderHelper
 	metaDagBuilt bool
@@ -112,6 +116,9 @@ type DagBuilderParams struct {
 
 	// Internal mutex for guaranteeing goroutine safety within multi-dagbuilder case
 	dMutex sync.Mutex
+
+	FileMode    os.FileMode
+	FileModTime time.Time
 }
 
 // New generates a new DagBuilderHelper from the given params and a given
@@ -120,12 +127,14 @@ type DagBuilderParams struct {
 // will contain underlying DagBuilderHelpers.
 func (dbp *DagBuilderParams) New(spl chunker.Splitter) (*DagBuilderHelper, error) {
 	db := dagBuilderHelper{
-		dmutex:     &dbp.dMutex,
-		dserv:      dbp.Dagserv,
-		spl:        spl,
-		rawLeaves:  dbp.RawLeaves,
-		cidBuilder: dbp.CidBuilder,
-		maxlinks:   dbp.Maxlinks,
+		dmutex:      &dbp.dMutex,
+		dserv:       dbp.Dagserv,
+		spl:         spl,
+		rawLeaves:   dbp.RawLeaves,
+		cidBuilder:  dbp.CidBuilder,
+		maxlinks:    dbp.Maxlinks,
+		fileMode:    dbp.FileMode,
+		fileModTime: dbp.FileModTime,
 	}
 	if fi, ok := spl.Reader().(files.FileInfo); dbp.NoCopy && ok {
 		db.fullPath = fi.AbsPath()
@@ -246,6 +255,34 @@ func (db *DagBuilderHelper) GetMetaDb() *MetaDagBuilderHelper {
 // SetMetaDb sets the given `mdb` to the metadata DAG build helper.
 func (db *DagBuilderHelper) SetMetaDb(mdb *MetaDagBuilderHelper) {
 	db.metaDb = mdb
+}
+
+// HasFileAttributes will return false if Filestore is being used,
+// otherwise returns true if a file mode or last modification time is set.
+func (db *DagBuilderHelper) HasFileAttributes() bool {
+	return db.fullPath == "" && (db.fileMode != 0 || !db.fileModTime.IsZero())
+}
+
+// SetFileAttributes stores file attributes present in the `DagBuilderHelper`
+// into the associated `ft.FSNode`.
+func (db *DagBuilderHelper) SetFileAttributes(n ipld.Node) error {
+	if pn, ok := n.(*dag.ProtoNode); ok {
+		fsn, err := ft.FSNodeFromBytes(pn.Data())
+		if err != nil {
+			return err
+		}
+		fsn.SetModTime(db.fileModTime)
+		fsn.SetMode(db.fileMode)
+
+		d, err := fsn.GetBytes()
+		if err != nil {
+			return err
+		}
+
+		pn.SetData(d)
+	}
+
+	return nil
 }
 
 // NewLeafNode creates a leaf node filled with data.  If rawLeaves is

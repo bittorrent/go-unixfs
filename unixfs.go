@@ -7,6 +7,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"time"
 
 	proto "github.com/gogo/protobuf/proto"
 	dag "github.com/ipfs/go-merkledag"
@@ -82,7 +84,7 @@ func FolderPBData() []byte {
 
 	data, err := proto.Marshal(pbfile)
 	if err != nil {
-		//this really shouldnt happen, i promise
+		// this really shouldnt happen, i promise
 		panic(err)
 	}
 	return data
@@ -289,6 +291,75 @@ func (n *FSNode) Metadata() []byte {
 func (n *FSNode) SetData(newData []byte) {
 	n.UpdateFilesize(int64(len(newData) - len(n.Data())))
 	n.format.Data = newData
+}
+
+// ModTime returns the stored last modified timestamp if available.
+func (n *FSNode) ModTime() time.Time {
+	ts := n.format.GetMtime()
+	return time.Unix(ts, 0)
+}
+
+// SetModTime stores the given last modified timestamp, otherwise nullifies stored timestamp.
+func (n *FSNode) SetModTime(ts time.Time) {
+	if ts.IsZero() {
+		n.format.Mtime = nil
+		return
+	}
+
+	n.format.Mtime = proto.Int64(ts.Unix())
+}
+
+// Mode returns the optionally stored file permissions
+func (n *FSNode) Mode() (m os.FileMode) {
+	perms := n.format.GetMode() & 0xFFF
+	if perms != 0 {
+		m = UnixPermsToModePerms(perms)
+		switch n.Type() {
+		case pb.Data_Directory, pb.Data_HAMTShard:
+			m |= os.ModeDir
+		case pb.Data_Symlink:
+			m |= os.ModeSymlink
+		}
+	}
+	return m
+}
+
+// UnixPermsToModePerms converts unix style mode permissions to os.FileMode
+// permissions, as it only operates on permission bits it does not set the
+// underlying type (fs.ModeDir, fs.ModeSymlink, etc.) in the returned
+// os.FileMode.
+func UnixPermsToModePerms(unixPerms uint32) os.FileMode {
+	if unixPerms == 0 {
+		return 0
+	}
+	return os.FileMode((unixPerms & 0x1FF) | (unixPerms & 0xC00 << 12) | (unixPerms & 0x200 << 11))
+}
+
+// SetMode stores the given mode permissions, or nullifies stored permissions
+// if none were provided and there are no extended bits set.
+func (n *FSNode) SetMode(m os.FileMode) {
+	n.SetModeFromUnixPermissions(ModePermsToUnixPerms(m))
+}
+
+// ModePermsToUnixPerms converts the permission bits of an os.FileMode to unix
+// style mode permissions.
+func ModePermsToUnixPerms(fileMode os.FileMode) uint32 {
+	return uint32((fileMode & 0xC00000 >> 12) | (fileMode & os.ModeSticky >> 11) | (fileMode & 0x1FF))
+}
+
+// SetModeFromUnixPermissions stores the given unix permissions, or nullifies stored permissions
+// if none were provided and there are no extended bits set.
+func (n *FSNode) SetModeFromUnixPermissions(unixPerms uint32) {
+	// preserve existing most significant 20 bits
+	newMode := (n.format.GetMode() & 0xFFFFF000) | (unixPerms & 0xFFF)
+
+	if unixPerms == 0 {
+		if newMode&0xFFFFF000 == 0 {
+			n.format.Mode = nil
+			return
+		}
+	}
+	n.format.Mode = &newMode
 }
 
 // UpdateFilesize updates the `Filesize` field from the internal `format`

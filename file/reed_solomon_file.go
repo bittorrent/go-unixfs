@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"sync"
 	"time"
 
@@ -48,6 +49,8 @@ type RsDirectory struct {
 	dir       *uio.ReedSolomonDirectory
 	size      int64
 	cidString string
+	mode      os.FileMode
+	mtime     time.Time
 }
 
 func (d *RsDirectory) Close() error {
@@ -107,6 +110,14 @@ func (f *RsDirectory) SetSize(size int64) error {
 
 func (f *RsDirectory) IsReedSolomon() bool {
 	return true
+}
+
+func (d *RsDirectory) Mode() os.FileMode {
+	return d.mode
+}
+
+func (d *RsDirectory) ModTime() time.Time {
+	return d.mtime
 }
 
 type RsIterator struct {
@@ -369,7 +380,7 @@ func NewReedSolomonFileUnderDirectory(
 
 	rsDagInstance.offset = newOffset
 	return &rsFile{
-		DagReader: &uio.ReedSolomonDagReader{dr},
+		DagReader: &uio.ReedSolomonDagReader{Reader: dr},
 	}, nil
 }
 

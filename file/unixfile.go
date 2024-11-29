@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"time"
+
 	ft "github.com/bittorrent/go-unixfs"
 	uio "github.com/bittorrent/go-unixfs/io"
 	"github.com/bittorrent/go-unixfs/util"
@@ -30,6 +33,8 @@ type ufsDirectory struct {
 	dserv ipld.DAGService
 	dir   uio.Directory
 	size  int64
+	mode  os.FileMode
+	mtime time.Time
 }
 
 type ufsIterator struct {
@@ -134,6 +139,14 @@ func (d *ufsDirectory) Entries() files.DirIterator {
 	}
 }
 
+func (d *ufsDirectory) Mode() os.FileMode {
+	return d.mode
+}
+
+func (d *ufsDirectory) ModTime() time.Time {
+	return d.mtime
+}
+
 func (d *ufsDirectory) Size() (int64, error) {
 	return d.size, nil
 }
@@ -148,6 +161,14 @@ func (f *ufsDirectory) IsReedSolomon() bool {
 
 type ufsFile struct {
 	uio.DagReader
+}
+
+func (f *ufsFile) Mode() os.FileMode {
+	return f.DagReader.Mode()
+}
+
+func (f *ufsFile) ModTime() time.Time {
+	return f.DagReader.ModTime()
 }
 
 func (f *ufsFile) Size() (int64, error) {
@@ -165,12 +186,19 @@ func newUnixfsDir(ctx context.Context, dserv ipld.DAGService, nd *dag.ProtoNode)
 		return nil, err
 	}
 
+	fsn, err := ft.FSNodeFromBytes(nd.Data())
+	if err != nil {
+		return nil, err
+	}
+
 	return &ufsDirectory{
 		ctx:   ctx,
 		dserv: dserv,
 
-		dir:  dir,
-		size: int64(size),
+		dir:   dir,
+		size:  int64(size),
+		mode:  fsn.Mode(),
+		mtime: fsn.ModTime(),
 	}, nil
 }
 
