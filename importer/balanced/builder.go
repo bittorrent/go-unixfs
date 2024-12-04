@@ -174,13 +174,6 @@ func Layout(db *h.DagBuilderHelper) (ipld.Node, error) {
 		return nil, err
 	}
 
-	if db.HasFileAttributes() {
-		err = db.SetFileAttributes(root)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	// Add token metadata DAG, if exists, as a child to a new 'newRoot'.
 	if db.IsThereMetaData() {
 		fileSize, err := root.Size()
@@ -192,6 +185,14 @@ func Layout(db *h.DagBuilderHelper) (ipld.Node, error) {
 			return nil, err
 		}
 	}
+
+	if db.HasFileAttributes() {
+		err = db.SetFileAttributes(root)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return root, db.Add(root)
 }
 
