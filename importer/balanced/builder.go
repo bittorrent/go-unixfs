@@ -169,19 +169,16 @@ func Layout(db *h.DagBuilderHelper) (ipld.Node, error) {
 			return nil, err
 		}
 	}
+	root, err := newRoot.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	if db.HasFileAttributes() {
-		root, err := newRoot.GetDagNode()
-		if err != nil {
-			return nil, err
-		}
 		err = db.SetFileAttributes(root)
 		if err != nil {
 			return nil, err
 		}
-	}
-	root, err := newRoot.Commit()
-	if err != nil {
-		return nil, err
 	}
 
 	// Add token metadata DAG, if exists, as a child to a new 'newRoot'.
