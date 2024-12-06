@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
+	"time"
 
 	cid "github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
@@ -19,6 +21,8 @@ import (
 // operations from a []byte reader.
 type ReedSolomonDagReader struct {
 	*bytes.Reader // for Reader, Seeker, and WriteTo
+	mode          os.FileMode
+	modTime       time.Time
 }
 
 type nodeBufIndex struct {
@@ -160,6 +164,14 @@ func NewReedSolomonDagReader(ctx context.Context, n ipld.Node, serv ipld.NodeGet
 	}
 
 	return &ReedSolomonDagReader{Reader: bytes.NewReader(dataBuf.Bytes())}, missingReaders, &dataBuf, nil
+}
+
+func (f *ReedSolomonDagReader) Mode() os.FileMode {
+	return f.mode
+}
+
+func (f *ReedSolomonDagReader) ModTime() time.Time {
+	return f.modTime
 }
 
 // Size returns the total size of the data from the decoded DAG structured file

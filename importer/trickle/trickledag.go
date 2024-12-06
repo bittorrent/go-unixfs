@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	ft "github.com/bittorrent/go-unixfs"
 	h "github.com/bittorrent/go-unixfs/importer/helpers"
 	pb "github.com/bittorrent/go-unixfs/pb"
@@ -55,6 +56,10 @@ func Layout(db *h.DagBuilderHelper) (ipld.Node, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if db.HasFileAttributes() {
+		err = db.SetFileAttributes(root)
 	}
 	return root, db.Add(root)
 }
